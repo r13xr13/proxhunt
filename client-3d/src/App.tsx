@@ -193,6 +193,21 @@ export default function App() {
   useEffect(() => { loadData(); }, [loadData]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const shared = params.get('s');
+    if (shared) {
+      try {
+        const state = JSON.parse(atob(shared));
+        if (state.theme) setGlobeTheme(state.theme);
+        if (state.filters) setFilters(state.filters);
+        if (state.view && globeEl.current) {
+          setTimeout(() => globeEl.current.pointOfView(state.view, 1500), 1000);
+        }
+      } catch (e) { console.error('Failed to load shared state:', e); }
+    }
+  }, []);
+
+  useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -708,6 +723,12 @@ export default function App() {
           <button onClick={loadData} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '8px 12px', color: 'white', cursor: 'pointer' }}>🔄</button>
           <button onClick={() => setGlobeTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '8px 12px', color: 'white', cursor: 'pointer' }}>{globeTheme === 'dark' ? '☀️' : '🌙'}</button>
           <button onClick={() => setGlobeRotation(r => !r)} style={{ background: globeRotation ? '#e74c3c' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '8px 12px', color: 'white', cursor: 'pointer' }}>🔁</button>
+          <button onClick={() => {
+            const state = { theme: globeTheme, filters, view: globeEl.current?.pointOfView() };
+            const url = `${window.location.origin}?s=${btoa(JSON.stringify(state))}`;
+            navigator.clipboard.writeText(url);
+            alert('Share URL copied to clipboard!');
+          }} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '8px 12px', color: 'white', cursor: 'pointer' }}>🔗</button>
         </div>
       </div>
 
