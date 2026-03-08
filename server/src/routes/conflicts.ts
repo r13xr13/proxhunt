@@ -12,6 +12,7 @@ import { fetchSDRSignals, fetchRadioHFMidEast, fetchRadioUkraine, fetchGlobalSDR
 import { fetchADSBExchange, fetchMilitaryAircraft, fetchPrivateJets } from "../services/adsb";
 import { fetchEarthquakes, fetchWeatherAlerts, fetchVolcanoAlerts, fetchNuclearFacilities } from "../services/geo";
 import { fetchTwitterGeoAlerts, fetchRedditLiveThreads, fetchTelegramChannels, fetchWebIntrusionAlerts, fetchDarkWebAlerts } from "../services/social";
+import { fetchAllScrapedData, fetchEMSCearthquakes, fetchUSGSearthquakes, fetchNOAAweather, fetchOpenSkyNetwork, fetchAISreception } from "../services/scraper";
 
 const router = Router();
 
@@ -84,6 +85,16 @@ router.get("/", async (_req, res) => {
       fetchHFActiveFrequencies(),
       fetchAirbandFrequencies(),
       fetchSignalIntel(),
+      
+      // Web Scrapers (Real-time OSINT)
+      fetchAllScrapedData(),
+      
+      // Real-time APIs
+      fetchEMSCearthquakes(),
+      fetchUSGSearthquakes(),
+      fetchNOAAweather(),
+      fetchOpenSkyNetwork(),
+      fetchAISreception(),
     ]);
     
     results.forEach((result) => {
