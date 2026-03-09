@@ -26,7 +26,8 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 
 > ## **Demo**
 > [▶ Watch a demo of the platform on YouTube](https://youtu.be/e52LPDBjIAQ)
-
+> ## Discord
+> [Join Our Discord](https://discord.gg/zRyBE6S7YG)
 ---
 
 ## Features
