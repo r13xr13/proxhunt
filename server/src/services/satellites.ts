@@ -110,7 +110,7 @@ export async function fetchMilitarySatellites(): Promise<EventData[]> {
             type: "Military/Earth Obs",
             description: `${sat.NAME}`,
             source: "CelesTrak",
-            category: "air"
+            category: "space"
           });
         }
       }
@@ -120,4 +120,58 @@ export async function fetchMilitarySatellites(): Promise<EventData[]> {
   }
   
   return satellites;
+}
+
+export async function fetchSatelliteImagerySources(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const sources = [
+    { name: "NASA Worldview", lat: 35.0, lon: 18.0, desc: "NASA Worldview - Real-time satellite imagery", url: "https://worldview.earthdata.nasa.gov" },
+    { name: "Sentinel Hub", lat: 50.0, lon: 10.0, desc: "Copernicus Sentinel-2/3 data", url: "https://www.sentinel-hub.com" },
+    { name: "NASA GIBS", lat: 40.0, lon: -100.0, desc: "NASA GIBS - Global imagery service", url: "https://gibs.earthdata.nasa.gov" },
+    { name: "Maxar Open", lat: 34.0, lon: -118.0, desc: "Maxar Open Data for disasters", url: "https://www.maxar.com/open-data" },
+    { name: "Google Earth", lat: 0.0, lon: 0.0, desc: "Google Earth Pro - Free satellite imagery", url: "https://earth.google.com" },
+    { name: "EOSDA LandViewer", lat: 30.0, lon: 45.0, desc: "EOS Data Analytics - Satellite analysis", url: "https://eos.com/landviewer" },
+    { name: "USGS Earth Explorer", lat: 35.0, lon: -105.0, desc: "USGS - Landsat, MODIS,ASTER", url: "https://earthexplorer.usgs.gov" },
+    { name: "Copernicus Open Hub", lat: 52.0, lon: 5.0, desc: "Copernicus Open Access Hub", url: "https://scihub.copernicus.eu" },
+  ];
+  
+  for (const src of sources) {
+    events.push({
+      id: `imagery-${src.name.toLowerCase().replace(/\s/g, '-')}`,
+      lat: src.lat,
+      lon: src.lon,
+      date: new Date().toISOString(),
+      type: `🛰️ ${src.name}`,
+      description: src.desc,
+      source: src.name,
+      category: "space"
+    });
+  }
+  
+  const damageMapping = [
+    { name: "Ukraine Damage Explorer", lat: 48.3794, lon: 31.1656, desc: "ETH Zurich - Building damage assessment in Ukraine using SAR imagery", url: "https://ukraineDamage.app" },
+    { name: "Rapid Damage Mapping", lat: 48.3794, lon: 31.1656, desc: "University of Zurich - ML-based damage mapping", url: "https://rapiddamage.eu" },
+    { name: "Bing Maps", lat: 0.0, lon: 0.0, desc: "Microsoft Bing - Aerial imagery for OSINT", url: "https://www.bing.com/maps" },
+    { name: "ArcGIS Map Viewer", lat: 0.0, lon: 0.0, desc: "Esri - High-resolution basemaps (30cm)", url: "https://www.arcgis.com" },
+    { name: "Wayback Imagery", lat: 0.0, lon: 0.0, desc: "Esri - Archived imagery with swipe", url: "https://wayback.maptiler.org" },
+    { name: "Google Earth Pro", lat: 0.0, lon: 0.0, desc: "Historical imagery & long-term change detection", url: "https://earth.google.com" },
+    { name: "Copernicus Browser", lat: 50.0, lon: 10.0, desc: "ESA Sentinel - SWIR, NDVI, Radar through clouds", url: "https://browser.e Sentinel-hub.com" },
+    { name: "Apple Maps", lat: 0.0, lon: 0.0, desc: "Alternative angles & 3D urban analysis", url: "https://maps.apple.com" },
+  ];
+  
+  for (const dm of damageMapping) {
+    events.push({
+      id: `damage-${dm.name.toLowerCase().replace(/\s/g, '-')}`,
+      lat: dm.lat,
+      lon: dm.lon,
+      date: new Date().toISOString(),
+      type: `🏗️ ${dm.name}`,
+      description: dm.desc,
+      source: dm.name,
+      category: "space"
+    });
+  }
+  
+  return events;
 }

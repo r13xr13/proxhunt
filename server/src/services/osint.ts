@@ -136,5 +136,31 @@ export async function fetchGlobalIncidents(): Promise<EventData[]> {
     });
   }
   
+  const arcEvents = [
+    { lat: 48.8566, lon: 2.3522, endLat: 51.5074, endLon: -0.1278, type: "Military Flight", desc: "French deployment to UK", cat: "air" },
+    { lat: 40.7128, lon: -74.006, endLat: 51.5074, endLon: -0.1278, type: "US-UK Transfer", desc: "US military assets to UK", cat: "air" },
+    { lat: 35.6762, lon: 139.6503, endLat: 37.7749, endLon: -122.4194, type: "Pacific Route", desc: "Trans-pacific flight", cat: "air" },
+    { lat: 31.7683, lon: 35.2137, endLat: 33.8547, endLon: 35.8623, type: "Regional Activity", desc: "Israel to Lebanon", cat: "conflict" },
+    { lat: 48.3794, lon: 31.1656, endLat: 50.4501, endLon: 30.5234, type: "Movement", desc: "Ukrainian troop movement", cat: "conflict" },
+    { lat: 55.7558, lon: 37.6173, endLat: 52.52, endLon: 13.405, type: "NATO Activity", desc: "Russia to Germany route", cat: "conflict" },
+    { lat: 21.3069, lon: 157.8583, endLat: 35.6762, endLon: 139.6503, type: "Naval Route", desc: "US carrier to Japan", cat: "maritime" },
+    { lat: 1.3521, lon: 103.8198, endLat: 51.9244, endLon: 4.4777, type: "Shipping Route", desc: "Singapore to Rotterdam", cat: "maritime" },
+  ];
+  
+  for (const arc of arcEvents) {
+    events.push({
+      id: `arc-${events.length}`,
+      lat: arc.lat,
+      lon: arc.lon,
+      endLat: arc.endLat,
+      endLon: arc.endLon,
+      date: new Date().toISOString(),
+      type: arc.type,
+      description: arc.desc,
+      source: "OSINT",
+      category: "conflict"
+    });
+  }
+  
   return events;
 }

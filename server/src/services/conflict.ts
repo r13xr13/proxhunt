@@ -8,7 +8,9 @@ export interface EventData {
   type: string;
   description: string;
   source: string;
-  category: "conflict" | "maritime" | "air" | "cyber" | "land" | "space" | "radio" | "weather" | "earthquakes" | "social";
+  category: "conflict" | "maritime" | "air" | "cyber" | "land" | "space" | "radio" | "weather" | "earthquakes" | "social" | "cameras";
+  endLat?: number;
+  endLon?: number;
 }
 
 export async function fetchGDELTConflicts(): Promise<EventData[]> {

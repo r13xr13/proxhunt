@@ -29,6 +29,11 @@ interface Workspace {
   filters: Record<string, boolean>;
   layers: Record<string, boolean>;
   bookmarks: Bookmark[];
+  alerts?: Alert[];
+  timeRange?: [Date, Date];
+  maxPoints?: number;
+  pointSize?: number;
+  globeTheme?: 'dark' | 'light' | 'satellite' | 'terrain';
 }
 
 interface Bookmark {
@@ -65,7 +70,8 @@ const categoryColors: Record<string, string> = {
   radio: "#f39c12",
   weather: "#3498db",
   earthquakes: "#8e44ad",
-  social: "#e91e63"
+  social: "#e91e63",
+  cameras: "#00ced1"
 };
 
 const categoryEmoji: Record<string, string> = {
@@ -78,7 +84,8 @@ const categoryEmoji: Record<string, string> = {
   radio: "📡",
   weather: "🌤",
   earthquakes: "🌍",
-  social: "📱"
+  social: "📱",
+  cameras: "📷"
 };
 
 const GLOBE_DARK = '//unpkg.com/three-globe/example/img/earth-dark.jpg';
@@ -94,11 +101,49 @@ const GLOBE_STYLES = {
   terrain: '//unpkg.com/three-globe/example/img/earth-dark.jpg'
 };
 
-const MAPBOX_TILES = {
-  streets: 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}',
-  satellite: 'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}',
-  dark: 'https://api.mapbox.com/styles/v1/mapbox/dark-v10/tiles/{z}/{x}/{y}',
-  light: 'https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}'
+const TILE_LAYERS = {
+  osm: {
+    name: 'OpenStreetMap',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors',
+    type: 'free'
+  },
+  cartodb_dark: {
+    name: 'CartoDB Dark',
+    url: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+    attribution: '© CartoDB',
+    type: 'free'
+  },
+  cartodb_light: {
+    name: 'CartoDB Light',
+    url: 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+    attribution: '© CartoDB',
+    type: 'free'
+  },
+  stamen_terrain: {
+    name: 'Stamen Terrain',
+    url: 'https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}.png',
+    attribution: '© Stadia Maps',
+    type: 'free'
+  },
+  stamen_toner: {
+    name: 'Stamen Toner',
+    url: 'https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png',
+    attribution: '© Stadia Maps',
+    type: 'free'
+  },
+  esri_worldimagery: {
+    name: 'ESRI Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri',
+    type: 'free'
+  },
+  wikimedia: {
+    name: 'Wikimedia',
+    url: 'https://maps.wikimedia.org/img/{z},{x},{y}.png',
+    attribution: '© Wikimedia',
+    type: 'free'
+  }
 };
 
 const LOCATIONS = [
@@ -146,6 +191,7 @@ export default function App() {
   const [enableClustering, setEnableClustering] = useState(true);
   const [showGraticules, setShowGraticules] = useState(false);
   const [showAtmosphere, setShowAtmosphere] = useState(true);
+  const [showCameras, setShowCameras] = useState(true);
   const [showClouds, setShowClouds] = useState(false);
   const [globeRotation, setGlobeRotation] = useState(false);
   
@@ -176,7 +222,7 @@ export default function App() {
   const [filters, setFilters] = useState<Record<string, boolean>>({
     conflict: true, maritime: true, air: true, cyber: true,
     land: true, space: true, radio: true, weather: true,
-    earthquakes: true, social: true
+    earthquakes: true, social: true, cameras: true
   });
   
   const [severityFilters, setSeverityFilters] = useState<Record<string, boolean>>({
@@ -192,9 +238,9 @@ export default function App() {
   const [currentWorkspace, setCurrentWorkspace] = useState<string | null>(null);
   
   const [panelState, setPanelState] = useState<PanelState>({
-    left: 320,
-    right: 400,
-    bottom: 120
+    left: 280,
+    right: 320,
+    bottom: 100
   });
   const [activeRightTab, setActiveRightTab] = useState<"details" | "analytics" | "entities" | "timeline">("details");
   const [activeLeftTab, setActiveLeftTab] = useState<"layers" | "categories" | "filters" | "import">("layers");
@@ -226,13 +272,12 @@ export default function App() {
   const [pois, setPois] = useState<{id: string, name: string, lat: number, lon: number, type: string, notes: string}[]>([]);
   const [showPois, setShowPois] = useState(false);
   
-  // Mapbox
-  const [mapboxToken, setMapboxToken] = useState(() => localStorage.getItem('mapbox_token') || "");
-  const [mapboxStyle, setMapboxStyle] = useState<keyof typeof MAPBOX_TILES>('dark');
-  const [useMapbox, setUseMapbox] = useState(false);
+  // Tile Layer (Free)
+  const [tileLayer, setTileLayer] = useState<keyof typeof TILE_LAYERS>('cartodb_dark');
+  const [useTiles, setUseTiles] = useState(true);
   
   // Live Feed
-  const [showLiveFeed, setShowLiveFeed] = useState(false);
+  const [showLiveFeed, setShowLiveFeed] = useState(true);
   const [liveFeedItems, setLiveFeedItems] = useState<{id: string, time: Date, message: string, type: string, severity: string}[]>([]);
   
   // Drawing
@@ -248,12 +293,14 @@ export default function App() {
   const [showHelp, setShowHelp] = useState(false);
   
   const tilesData = useMemo(() => {
-    if (!useMapbox || !mapboxToken) return undefined;
+    if (!useTiles) return undefined;
+    const layer = TILE_LAYERS[tileLayer];
     return [{
-      url: MAPBOX_TILES[mapboxStyle].replace('api.mapbox.com', `api.mapbox.com/v4/${mapboxStyle}`) + `?access_token=${mapboxToken}`,
-      maxZoom: 19
+      url: layer.url,
+      maxZoom: 19,
+      attribution: layer.attribution
     }];
-  }, [useMapbox, mapboxToken, mapboxStyle]);
+  }, [useTiles, tileLayer]);
 
   const loadData = useCallback(async () => {
     try {
@@ -621,7 +668,7 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
     }));
   }, [validEvents, showPaths]);
 
-  const heatmapsData = useMemo(() => showHeatmap ? [validEvents] : [], [validEvents, showHeatmap]);
+  const heatmapsData = useMemo(() => showHeatmap ? validEvents : [], [validEvents, showHeatmap]);
 
   const bgColor = globeTheme === 'dark' ? '#0a0a14' : '#f0f0f0';
 
@@ -662,23 +709,20 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
     else setThreatLevel('low');
   }, [analytics]);
 
-  // Simulate live feed updates
-  useMemo(() => {
-    if (!showLiveFeed) return;
-    const categories = Object.keys(categoryColors);
-    const types = ['Alert', 'Update', 'Intelligence', 'Warning', 'Breaking'];
-    const interval = setInterval(() => {
-      const newItem = {
-        id: Date.now().toString(),
-        time: new Date(),
-        message: `New ${categories[Math.floor(Math.random() * categories.length)]} event detected in region ${Math.floor(Math.random() * 10)}`,
-        type: types[Math.floor(Math.random() * types.length)],
-        severity: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)]
-      };
-      setLiveFeedItems(prev => [newItem, ...prev].slice(0, 50));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [showLiveFeed]);
+  // Populate live feed with real events
+  useEffect(() => {
+    if (!showLiveFeed || validEvents.length === 0) return;
+    
+    const newItems = validEvents.slice(0, 30).map((event, idx) => ({
+      id: event.id || `event-${idx}`,
+      time: new Date(event.date),
+      message: `${event.type}: ${event.description?.substring(0, 80)}${event.description && event.description.length > 80 ? '...' : ''}`,
+      type: event.category.toUpperCase(),
+      severity: event.severity || (idx < 10 ? 'high' : idx < 20 ? 'medium' : 'low')
+    }));
+    
+    setLiveFeedItems(newItems);
+  }, [showLiveFeed, validEvents]);
 
   const entityGraph = useMemo(() => {
     const nodes: any[] = [];
@@ -738,11 +782,57 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
         viewState: globeEl.current?.pointOfView(),
         filters,
         layers: { showArcs, showHeatmap, showHexBin, showRings, showPolygons, showPaths },
-        bookmarks
+        bookmarks,
+        alerts,
+        timeRange,
+        maxPoints,
+        pointSize,
+        globeTheme
       };
       setWorkspaces([...workspaces, workspace]);
       setCurrentWorkspace(workspace.id);
     }
+  };
+
+  const exportWorkspace = (ws: Workspace) => {
+    const blob = new Blob([JSON.stringify(ws, null, 2)], { type: 'application/json' });
+    saveAs(blob, `${ws.name.replace(/\s+/g, '_')}_workspace.json`);
+  };
+
+  const importWorkspace = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target?.result as string);
+        if (imported.name && imported.filters) {
+          imported.id = Date.now().toString();
+          imported.createdAt = new Date().toISOString();
+          setWorkspaces([...workspaces, imported]);
+          alert(`Workspace "${imported.name}" imported successfully!`);
+        }
+      } catch (err) {
+        alert('Invalid workspace file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const shareWorkspace = (ws: Workspace) => {
+    const shareData = {
+      name: ws.name,
+      filters: ws.filters,
+      layers: ws.layers,
+      timeRange: ws.timeRange,
+      maxPoints: ws.maxPoints,
+      pointSize: ws.pointSize,
+      globeTheme: ws.globeTheme
+    };
+    const encoded = btoa(JSON.stringify(shareData));
+    const url = `${window.location.origin}?workspace=${encoded}`;
+    navigator.clipboard.writeText(url);
+    alert('Workspace URL copied to clipboard!');
   };
 
   const loadWorkspace = (id: string) => {
@@ -986,7 +1076,8 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
                       { checked: showGraticules, set: setShowGraticules, icon: '🌍', label: 'Grid Lines' },
                       { checked: showClouds, set: setShowClouds, icon: '☁️', label: 'Clouds' },
                       { checked: globeRotation, set: setGlobeRotation, icon: '🔄', label: 'Auto Rotate' },
-                      { checked: showTerrain, set: setShowTerrain, icon: '🏔️', label: '3D Terrain' }
+                      { checked: showTerrain, set: setShowTerrain, icon: '🏔️', label: '3D Terrain' },
+                      { checked: showCameras, set: setShowCameras, icon: '📷', label: 'Cameras' }
                     ].map((item, i) => (
                       <label key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#aaa', fontSize: '0.85rem' }}>
                         <input type="checkbox" checked={item.checked} onChange={(e) => item.set(e.target.checked)} />
@@ -997,56 +1088,33 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
-                  <div style={{ color: '#e67e22', fontSize: '0.65rem', marginBottom: '10px', letterSpacing: '1px' }}>MAPBOX TILES</div>
+                  <div style={{ color: '#e67e22', fontSize: '0.65rem', marginBottom: '10px', letterSpacing: '1px' }}>TILE LAYER (FREE)</div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', color: '#aaa', fontSize: '0.85rem', marginBottom: '10px' }}>
                     <input 
                       type="checkbox" 
-                      checked={useMapbox} 
-                      onChange={(e) => {
-                        setUseMapbox(e.target.checked);
-                        if (e.target.checked && mapboxToken) {
-                          localStorage.setItem('mapbox_token', mapboxToken);
-                        }
-                      }} 
+                      checked={useTiles} 
+                      onChange={(e) => setUseTiles(e.target.checked)} 
                     />
-                    <span>🗺️ Enable Mapbox</span>
+                    <span>🗺️ Enable Tiles</span>
                   </label>
-                  {useMapbox && (
-                    <>
-                      <input
-                        type="password"
-                        placeholder="Mapbox Access Token"
-                        value={mapboxToken}
-                        onChange={(e) => setMapboxToken(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '8px',
-                          background: 'rgba(255,255,255,0.1)',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          borderRadius: '6px',
-                          color: 'white',
-                          fontSize: '0.75rem',
-                          marginBottom: '8px'
-                        }}
-                      />
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        {Object.keys(MAPBOX_TILES).map(style => (
-                          <button key={style} onClick={() => setMapboxStyle(style as keyof typeof MAPBOX_TILES)}
-                            style={{
-                              background: mapboxStyle === style ? '#e67e22' : 'rgba(255,255,255,0.1)',
-                              border: 'none',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              color: 'white',
-                              cursor: 'pointer',
-                              fontSize: '0.65rem',
-                              textTransform: 'capitalize'
-                            }}>
-                            {style}
-                          </button>
-                        ))}
-                      </div>
-                    </>
+                  {useTiles && (
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {Object.keys(TILE_LAYERS).map(layer => (
+                        <button key={layer} onClick={() => setTileLayer(layer as keyof typeof TILE_LAYERS)}
+                          style={{
+                            background: tileLayer === layer ? '#e67e22' : 'rgba(255,255,255,0.1)',
+                            border: 'none',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '0.65rem',
+                            textTransform: 'capitalize'
+                          }}>
+                          {TILE_LAYERS[layer as keyof typeof TILE_LAYERS].name}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
 
@@ -1262,20 +1330,41 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
                   💾 Save Workspace
                 </button>
                 
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                  <label style={{
+                    flex: 1,
+                    background: '#3498db',
+                    border: 'none',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    textAlign: 'center'
+                  }}>
+                    📥 Import
+                    <input type="file" accept=".json" onChange={importWorkspace} style={{ display: 'none' }} />
+                  </label>
+                </div>
+                
                 {workspaces.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {workspaces.map(ws => (
-                      <div key={ws.id} onClick={() => loadWorkspace(ws.id)} style={{
+                      <div key={ws.id} style={{
                         background: currentWorkspace === ws.id ? 'rgba(52, 152, 219, 0.3)' : 'rgba(255,255,255,0.05)',
                         padding: '10px',
                         borderRadius: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
+                        cursor: 'pointer'
                       }}>
-                        <span style={{ color: 'white', fontSize: '0.8rem' }}>{ws.name}</span>
-                        <span style={{ color: '#666', fontSize: '0.65rem' }}>{ws.createdAt.split('T')[0]}</span>
+                        <div onClick={() => loadWorkspace(ws.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ color: 'white', fontSize: '0.8rem' }}>{ws.name}</span>
+                          <span style={{ color: '#666', fontSize: '0.65rem' }}>{ws.createdAt.split('T')[0]}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button onClick={() => exportWorkspace(ws)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: 'none', padding: '4px', borderRadius: '4px', color: '#aaa', fontSize: '0.65rem', cursor: 'pointer' }}>📤 Export</button>
+                          <button onClick={() => shareWorkspace(ws)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: 'none', padding: '4px', borderRadius: '4px', color: '#aaa', fontSize: '0.65rem', cursor: 'pointer' }}>🔗 Share</button>
+                          <button onClick={() => { setWorkspaces(workspaces.filter(w => w.id !== ws.id)); if (currentWorkspace === ws.id) setCurrentWorkspace(null); }} style={{ flex: 1, background: 'rgba(231,76,60,0.3)', border: 'none', padding: '4px', borderRadius: '4px', color: '#e74c3c', fontSize: '0.65rem', cursor: 'pointer' }}>🗑️</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1513,7 +1602,7 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
             pointsData={validEvents}
             pointLat={(d: any) => d.lat}
             pointLng={(d: any) => d.lon}
-            pointColor={(d: any) => categoryColors[d.category] || '#ffff00'}
+            pointColor={(d: any) => categoryColors[d.category] || (d.category === 'cameras' ? '#00ced1' : '#ffff00')}
             pointAltitude={0.01}
             pointRadius={pointSize / 100}
             pointsMerge={enableClustering}
@@ -1825,6 +1914,42 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
                     <div style={{ color: '#ccc', fontSize: '0.85rem', lineHeight: 1.5 }}>{selectedEvent.description}</div>
                   </div>
 
+                  {selectedEvent.category === 'cameras' && (
+                    <div style={{ 
+                      background: 'rgba(0, 206, 209, 0.1)', 
+                      border: '1px solid rgba(0, 206, 209, 0.3)',
+                      borderRadius: '8px', 
+                      marginBottom: '12px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{ color: '#00ced1', fontSize: '0.65rem', padding: '8px 12px', background: 'rgba(0,206,209,0.2)', textTransform: 'uppercase' }}>
+                        📷 Live Camera Feed
+                      </div>
+                      <div style={{ padding: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '8px' }}>📹</div>
+                        <div style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '8px' }}>
+                          {selectedEvent.description}
+                        </div>
+                        <a 
+                          href={`https://www.earthcam.com/search/?search=${encodeURIComponent(selectedEvent.type.replace('📷 ', ''))}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-block',
+                            background: '#00ced1',
+                            color: 'white',
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            textDecoration: 'none',
+                            fontSize: '0.75rem'
+                          }}
+                        >
+                          🔗 View Live Feed
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
                     <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '6px' }}>
                       <div style={{ color: '#666', fontSize: '0.6rem', marginBottom: '2px' }}>COORDINATES</div>
@@ -2087,15 +2212,14 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
       {showEntityGraph && (
         <div style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '80%',
-          height: '70%',
-          background: 'rgba(10, 10, 25, 0.98)',
-          borderRadius: '16px',
+          top: '80px',
+          left: '20px',
+          width: '450px',
+          maxHeight: 'calc(100vh - 180px)',
+          background: 'rgba(10, 10, 25, 0.95)',
+          borderRadius: '12px',
           border: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 300,
+          zIndex: 200,
           display: 'flex',
           flexDirection: 'column'
         }}>
@@ -2146,19 +2270,19 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
         </div>
       )}
 
-      {/* Time Machine Panel */}
+      {/* Time Machine Panel - Top Left */}
       {showTimeMachine && (
         <div style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '500px',
-          background: 'rgba(10, 10, 25, 0.98)',
-          borderRadius: '16px',
+          top: '80px',
+          left: '20px',
+          width: '380px',
+          background: 'rgba(10, 10, 25, 0.95)',
+          borderRadius: '12px',
           border: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 300,
-          padding: '20px'
+          zIndex: 200,
+          padding: '16px',
+          boxShadow: '0 4px 30px rgba(0,0,0,0.5)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ margin: 0, color: 'white', fontSize: '1.1rem' }}>⏰ Time Machine</h2>
@@ -2245,19 +2369,19 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
         </div>
       )}
 
-      {/* Report Panel */}
+      {/* Report Panel - Top Right */}
       {showReportPanel && (
         <div style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '450px',
-          background: 'rgba(10, 10, 25, 0.98)',
-          borderRadius: '16px',
+          top: '80px',
+          right: '20px',
+          width: '360px',
+          background: 'rgba(10, 10, 25, 0.95)',
+          borderRadius: '12px',
           border: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 300,
-          padding: '20px'
+          zIndex: 200,
+          padding: '16px',
+          boxShadow: '0 4px 30px rgba(0,0,0,0.5)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ margin: 0, color: 'white', fontSize: '1.1rem' }}>📄 Generate Report</h2>
@@ -2326,51 +2450,65 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
         </div>
       )}
 
-      {/* Live Feed Panel */}
+      {/* Live Feed Panel - Bottom Right */}
       {showLiveFeed && (
         <div style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '450px',
-          maxHeight: '70%',
-          background: 'rgba(10, 10, 25, 0.98)',
-          borderRadius: '16px',
-          border: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 300,
-          padding: '20px',
+          bottom: '20px',
+          right: '20px',
+          width: '380px',
+          maxHeight: '400px',
+          background: 'rgba(10, 10, 25, 0.95)',
+          borderRadius: '12px',
+          border: '1px solid rgba(231, 76, 60, 0.3)',
+          zIndex: 250,
+          padding: '16px',
           overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(231, 76, 60, 0.1)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ margin: 0, color: 'white', fontSize: '1.1rem' }}>📡 Live Incident Feed</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ 
+                width: '8px', 
+                height: '8px', 
+                borderRadius: '50%', 
+                background: '#e74c3c',
+                animation: 'pulse 1.5s infinite'
+              }} />
+              <h3 style={{ margin: 0, color: 'white', fontSize: '0.9rem', fontWeight: '600' }}>🔴 LIVE INCIDENTS</h3>
+            </div>
             <button onClick={() => setShowLiveFeed(false)} style={{
-              background: 'none', border: 'none', color: '#666', fontSize: '1.2rem', cursor: 'pointer'
+              background: 'none', border: 'none', color: '#666', fontSize: '1rem', cursor: 'pointer'
             }}>✕</button>
           </div>
           
-          <div style={{ flex: 1, overflow: 'auto' }}>
+          <div style={{ flex: 1, overflow: 'auto', overflowX: 'hidden' }}>
             {liveFeedItems.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#666', padding: '40px' }}>
-                Waiting for incidents...
+              <div style={{ textAlign: 'center', color: '#666', padding: '20px', fontSize: '0.8rem' }}>
+                Waiting for real-time incidents...
               </div>
             ) : (
-              liveFeedItems.map(item => (
+              liveFeedItems.slice(0, 20).map(item => (
                 <div key={item.id} style={{
-                  background: item.severity === 'high' ? 'rgba(231, 76, 60, 0.1)' : 
+                  background: item.severity === 'critical' ? 'rgba(231, 76, 60, 0.15)' : 
+                             item.severity === 'high' ? 'rgba(231, 76, 60, 0.1)' : 
                              item.severity === 'medium' ? 'rgba(243, 156, 18, 0.1)' : 'rgba(255,255,255,0.03)',
                   padding: '10px',
                   borderRadius: '6px',
-                  marginBottom: '8px',
-                  borderLeft: `3px solid ${item.severity === 'high' ? '#e74c3c' : item.severity === 'medium' ? '#f39c12' : '#3498db'}`
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ color: '#e74c3c', fontSize: '0.7rem', fontWeight: 'bold' }}>{item.type}</span>
-                    <span style={{ color: '#666', fontSize: '0.65rem' }}>{item.time.toLocaleTimeString()}</span>
+                  marginBottom: '6px',
+                  borderLeft: `3px solid ${item.severity === 'critical' ? '#e74c3c' : item.severity === 'high' ? '#e74c3c' : item.severity === 'medium' ? '#f39c12' : '#3498db'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onClick={() => setSelectedEvent(liveFeedItems.find(e => e.id === item.id) as any)}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'center' }}>
+                    <span style={{ color: '#e74c3c', fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase' }}>{item.type}</span>
+                    <span style={{ color: '#666', fontSize: '0.6rem' }}>{item.time.toLocaleTimeString()}</span>
                   </div>
-                  <div style={{ color: '#ccc', fontSize: '0.8rem' }}>{item.message}</div>
+                  <div style={{ color: '#ccc', fontSize: '0.75rem', lineHeight: 1.4 }}>{item.message}</div>
                 </div>
               ))
             )}
@@ -2378,19 +2516,19 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
         </div>
       )}
 
-      {/* Draw Tools Panel */}
+      {/* Draw Tools Panel - Top Left */}
       {showDrawTools && (
         <div style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '350px',
-          background: 'rgba(10, 10, 25, 0.98)',
-          borderRadius: '16px',
+          top: '80px',
+          left: '20px',
+          width: '300px',
+          background: 'rgba(10, 10, 25, 0.95)',
+          borderRadius: '12px',
           border: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 300,
-          padding: '20px'
+          zIndex: 200,
+          padding: '16px',
+          boxShadow: '0 4px 30px rgba(0,0,0,0.5)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ margin: 0, color: 'white', fontSize: '1.1rem' }}>✏️ Drawing Tools</h2>
@@ -2454,19 +2592,21 @@ ${Object.entries(analytics.byCategory).map(([cat, count]) => `${cat}: ${count} (
         </div>
       )}
 
-      {/* Help Panel */}
+      {/* Help Panel - Top Right */}
       {showHelp && (
         <div style={{
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '400px',
-          background: 'rgba(10, 10, 25, 0.98)',
-          borderRadius: '16px',
+          top: '80px',
+          right: '20px',
+          width: '340px',
+          maxHeight: 'calc(100vh - 180px)',
+          overflow: 'auto',
+          background: 'rgba(10, 10, 25, 0.95)',
+          borderRadius: '12px',
           border: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 300,
-          padding: '20px'
+          zIndex: 200,
+          padding: '16px',
+          boxShadow: '0 4px 30px rgba(0,0,0,0.5)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ margin: 0, color: 'white', fontSize: '1.1rem' }}>⌨️ Keyboard Shortcuts</h2>

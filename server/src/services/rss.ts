@@ -10,6 +10,23 @@ const RSS_FEEDS = [
   { name: "Arms Control", url: "https://www.armscontrolwonk.com/rss" },
   { name: "War on the Rocks", url: "https://warontherocks.com/feed/" },
   { name: "Small Wars Journal", url: "https://smallwarsjournal.com/blog/rss.xml" },
+  { name: "RFI", url: "https://en.rfi.fr/rss/en/news.xml" },
+  { name: "France 24", url: "https://www.france24.com/en/rss" },
+  { name: "DW", url: "https://rss.dw.com/rdf/rss-en-all" },
+  { name: "Sky News", url: "https://feeds.skynews.com/feeds/rss/world.xml" },
+  { name: "ABC News", url: "https://abcnews.go.com/abcnews/topstories" },
+  { name: "NBC News", url: "https://feeds.nbcnews.com/nbcnews/topstories" },
+  { name: "CBS News", url: "https://www.cbsnews.com/feeds/rss/main.rss" },
+  { name: "Fox News", url: "https://feeds.foxnews.com/foxnews/world" },
+  { name: "NY Times World", url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml" },
+  { name: "Washington Post", url: "https://feeds.washingtonpost.com/rss/world" },
+  { name: "The Guardian", url: "https://www.theguardian.com/world/rss" },
+  { name: "CS Monitor", url: "https://www.csmonitor.com/rss/topics.rss" },
+  { name: "VOA", url: "https://www.voanews.com/api/epiqqrdoo -zmc" },
+  { name: "Kyiv Independent", url: "https://kyivindependent.com/feed/" },
+  { name: "Meduza", url: "https://meduza.io/api/v3/search?chrono=news&locale=en" },
+  { name: "Bellingcat", url: "https://www.bellingcat.com/feed/" },
+  { name: "Breaking Defense", url: "https://breakingdefense.com/feed/" },
 ];
 
 function extractGeoFromText(text: string): { lat: number; lon: number } | null {

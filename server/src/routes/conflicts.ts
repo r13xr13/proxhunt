@@ -4,7 +4,7 @@ import { fetchVesselData, fetchMarineAlerts, fetchVesselPositions, fetchNavalVes
 import { fetchAirTraffic } from "../services/air";
 import { fetchCyberThreats, fetchThreatFeeds, fetchShodanIntel, fetchCensysIntel, fetchGreyNoiseIntel, fetchVulnerabilityIntel } from "../services/cyber";
 import { fetchRSSNews, fetchDefenseNews } from "../services/rss";
-import { fetchStarlinkSatellites, fetchGPSSatellites, fetchMilitarySatellites } from "../services/satellites";
+import { fetchStarlinkSatellites, fetchGPSSatellites, fetchMilitarySatellites, fetchSatelliteImagerySources } from "../services/satellites";
 import { fetchHackerNewsIntel, fetchRedditGeoPosts, fetchGlobalIncidents } from "../services/osint";
 import { fetchInfrastructure, fetchPowerGrid, fetchCriticalInfrastructure } from "../services/land";
 import { fetchISSTracking, fetchN2YOSatellites, fetchSpaceDebris, fetchSatellitePasses, fetchRocketLaunches } from "../services/space";
@@ -13,6 +13,7 @@ import { fetchADSBExchange, fetchMilitaryAircraft, fetchPrivateJets } from "../s
 import { fetchEarthquakes, fetchWeatherAlerts, fetchVolcanoAlerts, fetchNuclearFacilities } from "../services/geo";
 import { fetchTwitterGeoAlerts, fetchRedditLiveThreads, fetchTelegramChannels, fetchWebIntrusionAlerts, fetchDarkWebAlerts } from "../services/social";
 import { fetchAllScrapedData, fetchEMSCearthquakes, fetchUSGSearthquakes, fetchNOAAweather, fetchOpenSkyNetwork, fetchAISreception } from "../services/scraper";
+import { fetchPublicCameras, fetchEarthCamFeeds, fetchWebCamTaxi } from "../services/cameras";
 
 const router = Router();
 
@@ -76,6 +77,7 @@ router.get("/", async (_req, res) => {
       fetchSpaceDebris(),
       fetchSatellitePasses(),
       fetchRocketLaunches(),
+      fetchSatelliteImagerySources(),
       
       // Radio/Signals
       fetchSDRSignals(),
@@ -95,6 +97,11 @@ router.get("/", async (_req, res) => {
       fetchNOAAweather(),
       fetchOpenSkyNetwork(),
       fetchAISreception(),
+      
+      // Public Cameras
+      fetchPublicCameras(),
+      fetchEarthCamFeeds(),
+      fetchWebCamTaxi(),
     ]);
     
     results.forEach((result) => {
@@ -116,7 +123,8 @@ router.get("/", async (_req, res) => {
         radio: allEvents.filter(e => e.category === "radio").length,
         weather: allEvents.filter(e => e.category === "weather").length,
         earthquakes: allEvents.filter(e => e.category === "earthquakes").length,
-        social: allEvents.filter(e => e.category === "social").length
+        social: allEvents.filter(e => e.category === "social").length,
+        cameras: allEvents.filter(e => e.category === "cameras").length
       }
     });
   } catch (error) {
