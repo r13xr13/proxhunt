@@ -1,293 +1,197 @@
 import { Router } from "express";
-import { fetchGDELTConflicts, fetchUCDPConflicts, EventData } from "../services/conflict";
+import { fetchGDELTConflicts, fetchUCDPConflicts, fetchReliefWebConflicts, EventData } from "../services/conflict";
+import { fetchACLEDEvents } from "../services/acled";
 import { fetchVesselData, fetchMarineAlerts, fetchVesselPositions, fetchNavalVessels, fetchPiracyZones } from "../services/maritime";
-import { fetchAirTraffic } from "../services/air";
-import { fetchCyberThreats, fetchThreatFeeds, fetchShodanIntel, fetchCensysIntel, fetchGreyNoiseIntel, fetchVulnerabilityIntel } from "../services/cyber";
-import { fetchRSSNews, fetchDefenseNews } from "../services/rss";
+import { fetchAirTraffic, fetchISSTracking, fetchMilitaryAircraft, fetchRocketLaunches as fetchAirRocketLaunches } from "../services/air";
+import { fetchCyberThreats, fetchThreatFeeds, fetchGreyNoiseIntel, fetchShodanIntel, fetchCensysIntel, fetchVulnerabilityIntel } from "../services/cyber";
+import { fetchRSSNews, fetchDefenseNews, fetchUkraineNews, fetchMiddleEastNews } from "../services/rss";
 import { fetchStarlinkSatellites, fetchGPSSatellites, fetchMilitarySatellites, fetchSatelliteImagerySources } from "../services/satellites";
 import { fetchHackerNewsIntel, fetchRedditGeoPosts, fetchGlobalIncidents } from "../services/osint";
 import { fetchInfrastructure, fetchPowerGrid, fetchCriticalInfrastructure } from "../services/land";
-import { fetchISSTracking, fetchN2YOSatellites, fetchSpaceDebris, fetchSatellitePasses, fetchRocketLaunches } from "../services/space";
+import { fetchISSTracking as fetchSpaceISS, fetchN2YOSatellites, fetchSpaceDebris, fetchSatellitePasses, fetchRocketLaunches } from "../services/space";
 import { fetchSDRSignals, fetchRadioHFMidEast, fetchRadioUkraine, fetchGlobalSDRNodes, fetchHFActiveFrequencies, fetchAirbandFrequencies, fetchSignalIntel } from "../services/radio";
-import { fetchADSBExchange, fetchMilitaryAircraft, fetchPrivateJets } from "../services/adsb";
+import { fetchADSBExchange, fetchMilitaryAircraft as fetchADSBMil, fetchPrivateJets } from "../services/adsb";
 import { fetchEarthquakes, fetchWeatherAlerts, fetchVolcanoAlerts, fetchNuclearFacilities } from "../services/geo";
 import { fetchTwitterGeoAlerts, fetchRedditLiveThreads, fetchTelegramChannels, fetchWebIntrusionAlerts, fetchDarkWebAlerts } from "../services/social";
 import { fetchAllScrapedData, fetchEMSCearthquakes, fetchUSGSearthquakes, fetchNOAAweather, fetchOpenSkyNetwork, fetchAISreception } from "../services/scraper";
-import { fetchPublicCameras, fetchEarthCamFeeds, fetchWebCamTaxi } from "../services/cameras";
+import { fetchPublicCameras, fetchEarthCamFeeds, fetchWebCamTaxi, fetchWindyCameras } from "../services/cameras";
 
 const router = Router();
 
+// ── Cache Layer ───────────────────────────────────────────────────────────────
+interface CacheEntry { data: any; ts: number; }
+const CACHE: Map<string, CacheEntry> = new Map();
+
+// Tiered TTLs: fast-changing data refreshes more often
+const TTL = {
+  live: 30_000,      // 30s  — aircraft, earthquakes, ISS
+  medium: 120_000,   // 2min — news feeds, GDELT
+  slow: 600_000,     // 10min — static/curated data
+};
+
+async function cached<T>(key: string, ttl: number, fn: () => Promise<T>): Promise<T> {
+  const hit = CACHE.get(key);
+  if (hit && Date.now() - hit.ts < ttl) return hit.data as T;
+  try {
+    const data = await fn();
+    CACHE.set(key, { data, ts: Date.now() });
+    return data;
+  } catch (err) {
+    if (hit) return hit.data as T; // serve stale on error
+    throw err;
+  }
+}
+
+// ── Grouped fetchers ──────────────────────────────────────────────────────────
+
+async function getConflictEvents(): Promise<EventData[]> {
+  return cached("conflicts", TTL.medium, async () => {
+    const results = await Promise.allSettled([
+      fetchACLEDEvents(),
+      fetchGDELTConflicts(), fetchUCDPConflicts(), fetchReliefWebConflicts(),
+      fetchRSSNews(), fetchDefenseNews(), fetchUkraineNews(), fetchMiddleEastNews(),
+      fetchRedditGeoPosts(), fetchHackerNewsIntel(), fetchGlobalIncidents(),
+      fetchRedditLiveThreads(), fetchTelegramChannels(), fetchAllScrapedData(),
+    ]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+async function getMaritimeEvents(): Promise<EventData[]> {
+  return cached("maritime", TTL.medium, async () => {
+    const results = await Promise.allSettled([
+      fetchVesselData(), fetchMarineAlerts(), fetchVesselPositions(),
+      fetchNavalVessels(), fetchPiracyZones(),
+    ]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+async function getAirEvents(): Promise<EventData[]> {
+  return cached("air", TTL.live, async () => {
+    const results = await Promise.allSettled([
+      fetchAirTraffic(), fetchMilitaryAircraft(), fetchADSBExchange(),
+      fetchOpenSkyNetwork(),
+    ]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+async function getCyberEvents(): Promise<EventData[]> {
+  return cached("cyber", TTL.medium, async () => {
+    const results = await Promise.allSettled([
+      fetchCyberThreats(), fetchThreatFeeds(), fetchGreyNoiseIntel(), fetchShodanIntel(),
+      fetchTwitterGeoAlerts(),
+    ]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+async function getLandEvents(): Promise<EventData[]> {
+  return cached("land", TTL.medium, async () => {
+    const results = await Promise.allSettled([
+      fetchInfrastructure(), fetchPowerGrid(), fetchCriticalInfrastructure(),
+      fetchEarthquakes(), fetchWeatherAlerts(), fetchVolcanoAlerts(), fetchNuclearFacilities(),
+      fetchUSGSearthquakes(), fetchEMSCearthquakes(), fetchNOAAweather(),
+    ]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+async function getSpaceEvents(): Promise<EventData[]> {
+  return cached("space", TTL.live, async () => {
+    const results = await Promise.allSettled([
+      fetchSpaceISS(), fetchStarlinkSatellites(), fetchGPSSatellites(),
+      fetchMilitarySatellites(), fetchSatelliteImagerySources(), fetchRocketLaunches(),
+    ]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+async function getRadioEvents(): Promise<EventData[]> {
+  return cached("radio", TTL.slow, async () => {
+    const results = await Promise.allSettled([
+      fetchSDRSignals(), fetchRadioHFMidEast(), fetchRadioUkraine(), fetchGlobalSDRNodes(),
+    ]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+async function getCameraEvents(): Promise<EventData[]> {
+  return cached("cameras", TTL.slow, async () => {
+    const results = await Promise.allSettled([fetchPublicCameras(), fetchWindyCameras()]);
+    return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
+  });
+}
+
+// ── Routes ───────────────────────────────────────────────────────────────────
+
 router.get("/", async (_req, res) => {
   try {
-    const allEvents: EventData[] = [];
-    
-    const results = await Promise.allSettled([
-      // News & OSINT
-      fetchRSSNews(),
-      fetchDefenseNews(),
-      fetchRedditGeoPosts(),
-      fetchGlobalIncidents(),
-      fetchHackerNewsIntel(),
-      fetchTwitterGeoAlerts(),
-      fetchRedditLiveThreads(),
-      fetchTelegramChannels(),
-      
-      // Conflict data
-      fetchGDELTConflicts(),
-      fetchUCDPConflicts(),
-      
-      // Maritime
-      fetchVesselData(),
-      fetchMarineAlerts(),
-      fetchVesselPositions(),
-      fetchNavalVessels(),
-      fetchPiracyZones(),
-      
-      // Air
-      fetchAirTraffic(),
-      fetchStarlinkSatellites(),
-      fetchGPSSatellites(),
-      fetchMilitarySatellites(),
-      fetchADSBExchange(),
-      fetchMilitaryAircraft(),
-      fetchPrivateJets(),
-      
-      // Cyber
-      fetchCyberThreats(),
-      fetchThreatFeeds(),
-      fetchShodanIntel(),
-      fetchCensysIntel(),
-      fetchGreyNoiseIntel(),
-      fetchVulnerabilityIntel(),
-      fetchWebIntrusionAlerts(),
-      fetchDarkWebAlerts(),
-      
-      // Land/Infrastructure
-      fetchInfrastructure(),
-      fetchPowerGrid(),
-      fetchCriticalInfrastructure(),
-      fetchEarthquakes(),
-      fetchWeatherAlerts(),
-      fetchVolcanoAlerts(),
-      fetchNuclearFacilities(),
-      
-      // Space
-      fetchISSTracking(),
-      fetchN2YOSatellites(),
-      fetchSpaceDebris(),
-      fetchSatellitePasses(),
-      fetchRocketLaunches(),
-      fetchSatelliteImagerySources(),
-      
-      // Radio/Signals
-      fetchSDRSignals(),
-      fetchRadioHFMidEast(),
-      fetchRadioUkraine(),
-      fetchGlobalSDRNodes(),
-      fetchHFActiveFrequencies(),
-      fetchAirbandFrequencies(),
-      fetchSignalIntel(),
-      
-      // Web Scrapers (Real-time OSINT)
-      fetchAllScrapedData(),
-      
-      // Real-time APIs
-      fetchEMSCearthquakes(),
-      fetchUSGSearthquakes(),
-      fetchNOAAweather(),
-      fetchOpenSkyNetwork(),
-      fetchAISreception(),
-      
-      // Public Cameras
-      fetchPublicCameras(),
-      fetchEarthCamFeeds(),
-      fetchWebCamTaxi(),
+    const [conflicts, maritime, air, cyber, land, space, radio, cameras] = await Promise.allSettled([
+      getConflictEvents(), getMaritimeEvents(), getAirEvents(), getCyberEvents(),
+      getLandEvents(), getSpaceEvents(), getRadioEvents(), getCameraEvents(),
     ]);
-    
-    results.forEach((result) => {
-      if (result.status === "fulfilled") {
-        allEvents.push(...result.value);
-      }
+
+    const allEvents: EventData[] = [
+      ...(conflicts.status === "fulfilled" ? conflicts.value : []),
+      ...(maritime.status === "fulfilled" ? maritime.value : []),
+      ...(air.status === "fulfilled" ? air.value : []),
+      ...(cyber.status === "fulfilled" ? cyber.value : []),
+      ...(land.status === "fulfilled" ? land.value : []),
+      ...(space.status === "fulfilled" ? space.value : []),
+      ...(radio.status === "fulfilled" ? radio.value : []),
+      ...(cameras.status === "fulfilled" ? cameras.value : []),
+    ];
+
+    // Deduplicate by ID
+    const seen = new Set<string>();
+    const unique = allEvents.filter(e => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
     });
-    
-    res.json({ 
-      events: allEvents,
-      summary: {
-        total: allEvents.length,
-        conflicts: allEvents.filter(e => e.category === "conflict").length,
-        maritime: allEvents.filter(e => e.category === "maritime").length,
-        air: allEvents.filter(e => e.category === "air").length,
-        cyber: allEvents.filter(e => e.category === "cyber").length,
-        land: allEvents.filter(e => e.category === "land").length,
-        space: allEvents.filter(e => e.category === "space").length,
-        radio: allEvents.filter(e => e.category === "radio").length,
-        weather: allEvents.filter(e => e.category === "weather").length,
-        earthquakes: allEvents.filter(e => e.category === "earthquakes").length,
-        social: allEvents.filter(e => e.category === "social").length,
-        cameras: allEvents.filter(e => e.category === "cameras").length
-      }
-    });
+
+    const summary = {
+      total: unique.length,
+      conflict: unique.filter(e => e.category === "conflict").length,
+      maritime: unique.filter(e => e.category === "maritime").length,
+      air: unique.filter(e => e.category === "air").length,
+      cyber: unique.filter(e => e.category === "cyber").length,
+      land: unique.filter(e => e.category === "land").length,
+      space: unique.filter(e => e.category === "space").length,
+      radio: unique.filter(e => e.category === "radio").length,
+      weather: unique.filter(e => e.category === "weather").length,
+      earthquakes: unique.filter(e => e.category === "earthquakes").length,
+      social: unique.filter(e => e.category === "social").length,
+      cameras: unique.filter(e => e.category === "cameras").length,
+      cached: CACHE.size,
+    };
+
+    console.log(`[API] /api/conflicts → ${unique.length} events (${JSON.stringify(summary)})`);
+    res.json({ events: unique, summary });
   } catch (error) {
-    console.error("Error fetching events:", error);
-    res.json({ events: [], error: "Failed to fetch data sources" });
+    console.error("Route error:", error);
+    res.status(500).json({ events: [], error: "Failed to aggregate events" });
   }
 });
 
-router.get("/conflicts", async (_req, res) => {
-  const [rss, defense, gdelt, ucdp, reddit, incidents, twitter, telegram] = await Promise.allSettled([
-    fetchRSSNews(),
-    fetchDefenseNews(),
-    fetchGDELTConflicts(),
-    fetchUCDPConflicts(),
-    fetchRedditGeoPosts(),
-    fetchGlobalIncidents(),
-    fetchTwitterGeoAlerts(),
-    fetchTelegramChannels()
-  ]);
-  
-  const events: EventData[] = [];
-  if (rss.status === "fulfilled") events.push(...rss.value);
-  if (defense.status === "fulfilled") events.push(...defense.value);
-  if (gdelt.status === "fulfilled") events.push(...gdelt.value);
-  if (ucdp.status === "fulfilled") events.push(...ucdp.value);
-  if (reddit.status === "fulfilled") events.push(...reddit.value);
-  if (incidents.status === "fulfilled") events.push(...incidents.value);
-  if (twitter.status === "fulfilled") events.push(...twitter.value);
-  if (telegram.status === "fulfilled") events.push(...telegram.value);
-  
-  res.json({ events });
-});
+// Category-specific routes
+router.get("/conflicts", async (_req, res) => res.json({ events: await getConflictEvents() }));
+router.get("/maritime", async (_req, res) => res.json({ events: await getMaritimeEvents() }));
+router.get("/air", async (_req, res) => res.json({ events: await getAirEvents() }));
+router.get("/cyber", async (_req, res) => res.json({ events: await getCyberEvents() }));
+router.get("/land", async (_req, res) => res.json({ events: await getLandEvents() }));
+router.get("/space", async (_req, res) => res.json({ events: await getSpaceEvents() }));
+router.get("/radio", async (_req, res) => res.json({ events: await getRadioEvents() }));
 
-router.get("/maritime", async (_req, res) => {
-  const [vessels, alerts, positions, naval, piracy] = await Promise.allSettled([
-    fetchVesselData(),
-    fetchMarineAlerts(),
-    fetchVesselPositions(),
-    fetchNavalVessels(),
-    fetchPiracyZones()
-  ]);
-  
-  const events: EventData[] = [];
-  if (vessels.status === "fulfilled") events.push(...vessels.value);
-  if (alerts.status === "fulfilled") events.push(...alerts.value);
-  if (positions.status === "fulfilled") events.push(...positions.value);
-  if (naval.status === "fulfilled") events.push(...naval.value);
-  if (piracy.status === "fulfilled") events.push(...piracy.value);
-  
-  res.json({ events });
-});
-
-router.get("/air", async (_req, res) => {
-  const [air, starlink, gps, military, adsb, militaryAc, privateJets] = await Promise.allSettled([
-    fetchAirTraffic(),
-    fetchStarlinkSatellites(),
-    fetchGPSSatellites(),
-    fetchMilitarySatellites(),
-    fetchADSBExchange(),
-    fetchMilitaryAircraft(),
-    fetchPrivateJets()
-  ]);
-  
-  const events: EventData[] = [];
-  if (air.status === "fulfilled") events.push(...air.value);
-  if (starlink.status === "fulfilled") events.push(...starlink.value);
-  if (gps.status === "fulfilled") events.push(...gps.value);
-  if (military.status === "fulfilled") events.push(...military.value);
-  if (adsb.status === "fulfilled") events.push(...adsb.value);
-  if (militaryAc.status === "fulfilled") events.push(...militaryAc.value);
-  if (privateJets.status === "fulfilled") events.push(...privateJets.value);
-  
-  res.json({ events });
-});
-
-router.get("/cyber", async (_req, res) => {
-  const [threats, feeds, shodan, censys, greynoise, vulns, intrusion, darkweb] = await Promise.allSettled([
-    fetchCyberThreats(),
-    fetchThreatFeeds(),
-    fetchShodanIntel(),
-    fetchCensysIntel(),
-    fetchGreyNoiseIntel(),
-    fetchVulnerabilityIntel(),
-    fetchWebIntrusionAlerts(),
-    fetchDarkWebAlerts()
-  ]);
-  
-  const events: EventData[] = [];
-  if (threats.status === "fulfilled") events.push(...threats.value);
-  if (feeds.status === "fulfilled") events.push(...feeds.value);
-  if (shodan.status === "fulfilled") events.push(...shodan.value);
-  if (censys.status === "fulfilled") events.push(...censys.value);
-  if (greynoise.status === "fulfilled") events.push(...greynoise.value);
-  if (vulns.status === "fulfilled") events.push(...vulns.value);
-  if (intrusion.status === "fulfilled") events.push(...intrusion.value);
-  if (darkweb.status === "fulfilled") events.push(...darkweb.value);
-  
-  res.json({ events });
-});
-
-router.get("/land", async (_req, res) => {
-  const [infra, power, critical, earthquakes, weather, volcanoes, nuclear] = await Promise.allSettled([
-    fetchInfrastructure(),
-    fetchPowerGrid(),
-    fetchCriticalInfrastructure(),
-    fetchEarthquakes(),
-    fetchWeatherAlerts(),
-    fetchVolcanoAlerts(),
-    fetchNuclearFacilities()
-  ]);
-  
-  const events: EventData[] = [];
-  if (infra.status === "fulfilled") events.push(...infra.value);
-  if (power.status === "fulfilled") events.push(...power.value);
-  if (critical.status === "fulfilled") events.push(...critical.value);
-  if (earthquakes.status === "fulfilled") events.push(...earthquakes.value);
-  if (weather.status === "fulfilled") events.push(...weather.value);
-  if (volcanoes.status === "fulfilled") events.push(...volcanoes.value);
-  if (nuclear.status === "fulfilled") events.push(...nuclear.value);
-  
-  res.json({ events });
-});
-
-router.get("/space", async (_req, res) => {
-  const [iss, n2yo, debris, passes, launches] = await Promise.allSettled([
-    fetchISSTracking(),
-    fetchN2YOSatellites(),
-    fetchSpaceDebris(),
-    fetchSatellitePasses(),
-    fetchRocketLaunches()
-  ]);
-  
-  const events: EventData[] = [];
-  if (iss.status === "fulfilled") events.push(...iss.value);
-  if (n2yo.status === "fulfilled") events.push(...n2yo.value);
-  if (debris.status === "fulfilled") events.push(...debris.value);
-  if (passes.status === "fulfilled") events.push(...passes.value);
-  if (launches.status === "fulfilled") events.push(...launches.value);
-  
-  res.json({ events });
-});
-
-router.get("/radio", async (_req, res) => {
-  const [sdr, hfme, ua, globalSDR, hfFreq, airband, sigIntel] = await Promise.allSettled([
-    fetchSDRSignals(),
-    fetchRadioHFMidEast(),
-    fetchRadioUkraine(),
-    fetchGlobalSDRNodes(),
-    fetchHFActiveFrequencies(),
-    fetchAirbandFrequencies(),
-    fetchSignalIntel()
-  ]);
-  
-  const events: EventData[] = [];
-  if (sdr.status === "fulfilled") events.push(...sdr.value);
-  if (hfme.status === "fulfilled") events.push(...hfme.value);
-  if (ua.status === "fulfilled") events.push(...ua.value);
-  if (globalSDR.status === "fulfilled") events.push(...globalSDR.value);
-  if (hfFreq.status === "fulfilled") events.push(...hfFreq.value);
-  if (airband.status === "fulfilled") events.push(...airband.value);
-  if (sigIntel.status === "fulfilled") events.push(...sigIntel.value);
-  
-  res.json({ events });
+// Cache stats
+router.get("/cache/status", (_req, res) => {
+  const status: Record<string, any> = {};
+  CACHE.forEach((v, k) => {
+    status[k] = { age: Math.round((Date.now() - v.ts) / 1000) + "s", events: v.data?.length || 0 };
+  });
+  res.json(status);
 });
 
 export default router;

@@ -1,81 +1,53 @@
 import axios from "axios";
 import { EventData } from "./conflict";
 
+// OpenSky Network - real ADSB data, free
 export async function fetchADSBExchange(): Promise<EventData[]> {
-  const events: EventData[] = [];
-  
   try {
+    // ADSBExchange requires API key now. Use OpenSky free tier
     const response = await axios.get(
-      "https://adsbexchange.com/api/aircraft/json/lat/40/lon/-100/dist/500/",
+      "https://opensky-network.org/api/states/all",
       { timeout: 15000 }
     );
-    
-    if (response.data?.aircraft) {
-      for (const aircraft of response.data.aircraft.slice(0, 25)) {
-        if (aircraft.lat && aircraft.lon) {
-          events.push({
-            id: `adsb-${aircraft.hex}`,
-            lat: aircraft.lat,
-            lon: aircraft.lon,
-            date: new Date().toISOString(),
-            type: aircraft.military ? "Military Aircraft" : "Civilian Aircraft",
-            description: `${aircraft.callsign || "N/A"} | Alt: ${aircraft.alt_geom || "N/A"}ft | GS: ${aircraft.gs || "N/A"}kts`,
-            source: "ADS-B Exchange",
-            category: "air"
-          });
-        }
-      }
-    }
+
+    if (!response.data?.states) return [];
+
+    // Filter interesting callsigns
+    const interestingPrefixes = [
+      "RCH", "REACH", "RRR", "JAKE", "BART", "VENUS", "FURY", "WOLF", "VIPER",
+      "COBRA", "EAGLE", "HAWK", "MAGMA", "GHOST", "REAPER", "DARKSTAR",
+      "CHAOS", "SPAD", "MARLIN", "DRAGON", "BONE", "KNIGHT"
+    ];
+
+    return response.data.states
+      .filter((s: any) => {
+        const cs = (s[1] || "").trim().toUpperCase();
+        return s[5] && s[6] && cs && interestingPrefixes.some(p => cs.startsWith(p));
+      })
+      .slice(0, 25)
+      .map((s: any) => ({
+        id: `adsb-mil-${s[0]}`,
+        lat: parseFloat(s[6]),
+        lon: parseFloat(s[5]),
+        date: new Date().toISOString(),
+        type: `Military Aircraft: ${(s[1] || s[0]).trim()}`,
+        description: `${s[2] || "Unknown"} — Callsign: ${(s[1] || "N/A").trim()}, Alt: ${s[7] ? Math.round(s[7]) + "m" : "N/A"}, ${s[9] ? Math.round(s[9] * 3.6) + "km/h" : ""}`,
+        source: "OpenSky Network",
+        category: "air" as const,
+        severity: "medium" as const,
+      }));
   } catch (error) {
-    console.error("ADS-B Exchange error:", error);
+    console.error("ADSB fetch error:", error);
+    return [];
   }
-  
-  return events;
 }
 
 export async function fetchMilitaryAircraft(): Promise<EventData[]> {
-  const military = [
-    { lat: 38.8719, lon: -77.0563, type: "US Military", desc: "Pentagon - Military Command" },
-    { lat: 51.8719, lon: -0.3683, type: "RAF Aircraft", desc: "RAF Mildenhall - US Air Force" },
-    { lat: 52.4125, lon: 4.855, type: "Dutch Military", desc: "Volkel Air Base" },
-    { lat: 49.4722, lon: 8.5144, type: "USAFE", desc: "Ramstein Air Base" },
-    { lat: 35.5494, lon: 139.7798, type: "JASDF", desc: "Hanamaki Air Base" },
-    { lat: 33.8361, lon: 129.7528, type: "US Navy", desc: "Atsugi Naval Air Station" },
-    { lat: 25.1389, lon: 55.1967, type: "UAE Air Force", desc: "Al Minhad Air Base" },
-    { lat: -33.8688, lon: 151.2093, type: "RAAF", desc: "RAAF Base Sydney" },
-    { lat: 31.9433, lon: 35.9018, type: "Israeli Air Force", desc: "Nevatim Air Base" },
-    { lat: 55.7558, lon: 37.6173, type: "Russian Air Force", desc: "Moscow region military" },
-  ];
-  
-  return military.map((m, i) => ({
-    id: `military-air-${i}`,
-    lat: m.lat,
-    lon: m.lon,
-    date: new Date().toISOString(),
-    type: m.type,
-    description: m.desc,
-    source: "Military Air Database",
-    category: "air"
-  }));
+  // Already covered by fetchADSBExchange + air.ts fetchMilitaryAircraft
+  return [];
 }
 
 export async function fetchPrivateJets(): Promise<EventData[]> {
-  const jets = [
-    { lat: 40.7128, lon: -74.006, desc: "Private jets - Teterboro NJ" },
-    { lat: 51.4700, lon: -0.4543, desc: "Private jets - Farnborough UK" },
-    { lat: 48.8283, lon: 2.355, desc: "Private jets - Le Bourget Paris" },
-    { lat: 34.0522, lon: -118.2437, desc: "Private jets - Van Nuys CA" },
-    { lat: 25.7617, lon: -80.1918, desc: "Private jets - Miami FL" },
-  ];
-  
-  return jets.map((j, i) => ({
-    id: `private-jet-${i}`,
-    lat: j.lat,
-    lon: j.lon,
-    date: new Date().toISOString(),
-    type: "Private Jet Activity",
-    description: j.desc,
-    source: "Private Jet Tracker",
-    category: "air"
-  }));
+  // Not security relevant - removed
+  return [];
 }
