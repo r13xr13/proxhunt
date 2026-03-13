@@ -44,13 +44,10 @@ async function openSkyGet(url: string): Promise<any> {
   return resp.data;
 }
 
-// Live aircraft over conflict/high-interest regions
+// Live aircraft over all regions (global)
 export async function fetchAirTraffic(): Promise<EventData[]> {
   const regions = [
-    { name: "Eastern Europe", lamin: 44, lomin: 22, lamax: 55, lomax: 42 },
-    { name: "Middle East",    lamin: 24, lomin: 34, lamax: 38, lomax: 62 },
-    { name: "East Asia",      lamin: 20, lomin: 110, lamax: 42, lomax: 145 },
-    { name: "West Africa",    lamin: 5,  lomin: -18, lamax: 20, lomax: 15 },
+    { name: "Global", lamin: -90, lomin: -180, lamax: 90, lomax: 180 },
   ];
 
   const all: EventData[] = [];
@@ -64,7 +61,7 @@ export async function fetchAirTraffic(): Promise<EventData[]> {
 
       const aircraft = data.states
         .filter((s: any) => s[5] && s[6] && s[0])
-        .slice(0, 40)
+        .slice(0, 300)
         .map((s: any) => ({
           id: `opensky-${s[0]}-${region.name.replace(/\s/g,"")}`,
           lat: parseFloat(s[6]),

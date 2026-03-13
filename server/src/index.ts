@@ -3,6 +3,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import path from "path";
 import conflictsRouter from "./routes/conflicts";
+import { startAISStream, stopAISStream, getAISStreamStatus } from "./services/maritime";
 import cors from "cors";
 
 const app = express();
@@ -211,7 +212,8 @@ io.on('connection', (socket) => {
 });
 
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  stopAISStream();
+  console.log('SIGTERM received, shutting down gracefully');
   if (broadcastInterval) {
     clearInterval(broadcastInterval);
   }
@@ -242,6 +244,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 httpServer.listen(PORT, () => {
+  startAISStream();
   console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║                    CONFLICT GLOBE                          ║
