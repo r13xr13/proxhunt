@@ -76,7 +76,7 @@
     {
       "parameters": {
         "webhook": {
-          "url": "http://localhost:5678/webhook/send-alert"
+          "url": "https://discord.com/api/webhooks/1482135247977054419/J_YFeTGGt8gtFv7OrWlJzuP0jeTovwWvAbRoF78Jxjuh0HjTHVqxCa0Ic_poSD072-Yd"
         },
         "method": "POST",
         "bodyParameters": {

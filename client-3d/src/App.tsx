@@ -1225,12 +1225,42 @@ export default function App() {
                   <button 
                     className="full-btn" 
                     style={{ background: "var(--accent)", color: "#fff" }}
-                    onClick={() => {
+                    onClick={async () => {
+                      // Save webhook URL to server if configured
+                      if (apiKeys.n8n_webhook) {
+                        try {
+                          await fetch("/api/webhook/config", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ url: apiKeys.n8n_webhook })
+                          });
+                        } catch (e) {
+                          console.error("Failed to configure webhook:", e);
+                        }
+                      }
                       const count = Object.keys(apiKeys).filter(k => apiKeys[k]).length;
-                      alert(`Saved ${count} API key(s). Restart the server or rebuild the container to apply changes.`);
+                      alert(`Saved ${count} API key(s). Webhook configured!`);
                     }}
                   >
                     💾 Save API Keys
+                  </button>
+                  <button
+                    className="full-btn"
+                    style={{ marginTop: 8, background: "var(--green)", color: "#fff" }}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch("/api/webhook/test", { method: "POST" });
+                        if (res.ok) {
+                          alert("✅ Test message sent to Discord!");
+                        } else {
+                          alert("❌ Failed to send test message");
+                        }
+                      } catch (e) {
+                        alert("❌ Error: " + e);
+                      }
+                    }}
+                  >
+                    🧪 Test Discord Webhook
                   </button>
                   <button 
                     className="full-btn" 

@@ -54,6 +54,58 @@ app.get("/api/cache/clear", (_req, res) => {
   res.json({ status: "cleared" });
 });
 
+// Webhook configuration endpoint
+let n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || "";
+
+app.post("/api/webhook/config", (req, res) => {
+  const { url, apiKey } = req.body;
+  if (url) {
+    n8nWebhookUrl = url;
+    console.log(`[Webhook] Configured: ${url}`);
+    res.json({ status: "configured", url });
+  } else {
+    res.json({ status: "current", url: n8nWebhookUrl });
+  }
+});
+
+// Webhook test endpoint
+app.post("/api/webhook/test", async (req, res) => {
+  if (!n8nWebhookUrl) {
+    return res.status(400).json({ error: "No webhook configured" });
+  }
+  try {
+    const axios = (await import("axios")).default;
+    await axios.post(n8nWebhookUrl, {
+      message: "Test from Conflict Globe",
+      type: "Test Alert",
+      severity: "low",
+      lat: 0,
+      lon: 0
+    });
+    res.json({ status: "sent" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Function to send events to webhook
+async function sendToWebhook(events: any[]) {
+  if (!n8nWebhookUrl || events.length === 0) return;
+  
+  const criticalEvents = events.filter(e => e.severity === "critical" || e.severity === "high");
+  if (criticalEvents.length === 0) return;
+  
+  try {
+    const axios = (await import("axios")).default;
+    for (const event of criticalEvents.slice(0, 5)) {
+      await axios.post(n8nWebhookUrl, event);
+    }
+    console.log(`[Webhook] Sent ${criticalEvents.length} critical events to webhook`);
+  } catch (err: any) {
+    console.error("[Webhook] Error:", err.message);
+  }
+}
+
 app.use("/api/conflicts", conflictsRouter);
 
 const clientBuildPath = path.join(__dirname, NODE_ENV === "production" ? "../../client-build" : "../../client-3d/dist");
