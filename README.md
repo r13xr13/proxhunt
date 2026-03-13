@@ -14,7 +14,7 @@
 
 <br/>
 
-![Conflict Globe Screenshot](https://raw.githubusercontent.com/r13xr13/conflict-globe.gl/master/Screenshot_07-Mar_00-33-44_13941.png)
+![Conflict Globe Screenshot](https://raw.githubusercontent.com/r13xr13/conflict-globe.gl/master/Screenshot_13-Mar_15-06-05_29016.png)
 
 </div>
 
