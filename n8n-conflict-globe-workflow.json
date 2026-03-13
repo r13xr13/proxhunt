@@ -89,8 +89,26 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:11434/api/chat",
-        "options": {}
+        "url": "http://172.17.0.1:11434/api/chat",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "llama3.2:latest"
+            },
+            {
+              "name": "messages",
+              "value": "[{\"role\": \"system\", \"content\": \"You are a military intelligence analyst.\"}, {\"role\": \"user\", \"content\": \"{{ $json.description }}\"}]"
+            },
+            {
+              "name": "stream",
+              "value": false
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
       },
       "id": "e6cb5d21-8421-4ef4-bf2f-3be8dd79e149",
       "name": "Ollama AI Analysis",
