@@ -28,7 +28,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:11434/api/chat",
+        "url": "http://host.docker.internal:11434/api/chat",
         "bodyParameters": {
           "parameters": [
             {"name": "model", "value": "llama3.2:latest"},
@@ -47,7 +47,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:11434/api/chat",
+        "url": "http://host.docker.internal:11434/api/chat",
         "bodyParameters": {
           "parameters": [
             {"name": "model", "value": "qwen2.5:7b"},
