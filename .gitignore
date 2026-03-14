@@ -3,6 +3,7 @@ dist/
 build/
 .env
 .env.local
+.env.*
 *.log
 .DS_Store
 coverage/
@@ -11,6 +12,7 @@ coverage/
 *.tgz
 discord-bot/node_modules/
 discord-bot/*.log
+discord-bot/.env
 server/node_modules/
 globe.gl/node_modules/
 client/node_modules/
