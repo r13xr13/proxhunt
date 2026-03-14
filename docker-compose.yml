@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_CESIUM_ION_TOKEN=your_cesium_ion_token_here
+    restart: unless-stopped

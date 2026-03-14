@@ -1,0 +1,805 @@
+[
+  [
+    "bbc-world-news-SGFtYXMgdXJn",
+    {
+      "id": "bbc-world-news-SGFtYXMgdXJn",
+      "lat": 31.204135301777725,
+      "lon": 35.08072821435881,
+      "date": "2026-03-14T13:34:17.000Z",
+      "type": "BBC World News: Hamas urges key ally Iran to halt attacks on Gulf ",
+      "description": "The Palestinian group also affirms Tehran's right to defend itself from \"aggression\" by the US and Israel.",
+      "source": "BBC World News",
+      "category": "conflict",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Geopolitical",
+        "keyIndicators": [
+          "Hamas' increased rhetoric towards Iran and its allies",
+          "Escalating tensions in the Middle East region",
+          "Potential for increased military action in the Gulf region"
+        ],
+        "affectedRegions": [
+          "Middle East",
+          "Gulf region"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "Hamas has urged Iran to halt attacks on Gulf states, indicating a potential escalation of tensions in the region. The statement also affirms Iran's right to defend itself from perceived aggression by the US and Israel.",
+        "recommendedActions": [
+          "Increase diplomatic efforts to de-escalate tensions between Iran and Gulf states",
+          "Monitor and prepare for potential military action in the region"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T23:04:10.177Z"
+    }
+  ],
+  [
+    "bbc-world-news-UnVzc2lhIGV4",
+    {
+      "id": "bbc-world-news-UnVzc2lhIGV4",
+      "lat": 55.697143191093055,
+      "lon": 37.81997970437711,
+      "date": "2026-03-14T21:50:22.000Z",
+      "type": "BBC World News: Russia exploiting Iran war, Zelensky says after fr",
+      "description": "Volodymyr Zelensky cast concern over the supply of air-defence missiles after a heavy overnight attack kills at least five.",
+      "source": "BBC World News",
+      "category": "conflict",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Geopolitical",
+        "keyIndicators": [
+          "Russian military activity in Iran increasing, indicating potential support or involvement in the conflict.",
+          "Increased tensions between Russia and Ukraine may lead to further escalation.",
+          "Lack of clear explanation from Russian officials regarding the attack, raising suspicions about their involvement."
+        ],
+        "affectedRegions": [
+          "Ukraine",
+          "Iran"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "Russian President Vladimir Zelensky expresses concern over the increasing activity of Russian military in Iran, suggesting potential exploitation of the Iran-Ukraine conflict for their own interests.",
+        "recommendedActions": [
+          "Monitor Russian military movements in Iran and Ukraine closely for any signs of escalation or support.",
+          "Increase diplomatic efforts to clarify the situation and prevent further tensions between Russia and Ukraine."
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T23:06:09.755Z"
+    }
+  ],
+  [
+    "bbc-world-news-Q3ViYW4gcHJv",
+    {
+      "id": "bbc-world-news-Q3ViYW4gcHJv",
+      "lat": 33.51371862930706,
+      "lon": 44.41964451817051,
+      "date": "2026-03-14T22:07:50.000Z",
+      "type": "BBC World News: Cuban protesters ransack Communist office as energ",
+      "description": "Discontent is mounting over rolling blackouts and shortages of food, fuel and medicine, exacerbated by a US blockade.",
+      "source": "BBC World News",
+      "category": "conflict",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Geopolitical",
+        "keyIndicators": [
+          "Growing discontent among Cuban citizens due to prolonged economic hardships",
+          "Escalating shortages of essential goods, including food, fuel, and medicine",
+          "Increasing tensions between Cuban government and US authorities"
+        ],
+        "affectedRegions": [
+          "Cuba"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "Cuban protesters are demonstrating against the government's handling of economic crises, with reports of violence and destruction in various parts of the country. The US blockade is being cited as a major factor in the discontent. The situation is volatile, with potential for further unrest and escalation.",
+        "recommendedActions": [
+          "Monitor the situation closely for signs of further escalation or regime collapse",
+          "Evaluate potential opportunities for US or international intervention to address economic hardships and promote stability"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:35:47.819Z"
+    }
+  ],
+  [
+    "deutsche-welle-UGFraXN0YW4g",
+    {
+      "id": "deutsche-welle-UGFraXN0YW4g",
+      "lat": 34.12063325822616,
+      "lon": 67.64539429960034,
+      "date": "2026-03-14T10:57:00.000Z",
+      "type": "Deutsche Welle: Pakistan shoots down Taliban drones after strikes ",
+      "description": "Pakistan's military said it intercepted \"rudimentary drones\" from Afghanistan. It comes a day after Pakistan launched deadly strikes on Kabul as well as strikes in Kandahar Province.",
+      "source": "Deutsche Welle",
+      "category": "social",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Military",
+        "keyIndicators": [
+          "Pakistan's military has demonstrated capability to intercept and counter aerial threats.",
+          "Taliban's use of drones indicates a growing dependence on aerial warfare.",
+          "Pakistan's actions may escalate the conflict in the region."
+        ],
+        "affectedRegions": [
+          "Kandahar Province",
+          "Afghanistan"
+        ],
+        "sentiment": "Neutral",
+        "escalationPotential": "High",
+        "summary": "Pakistan's military intercepted and shot down Taliban drones in response to recent strikes on Kabul and Kandahar Province, indicating a heightened state of tension in the region.",
+        "recommendedActions": [
+          "Monitor Pakistan's military movements and statements for further developments.",
+          "Assess the potential impact of this incident on regional stability and potential escalations."
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:37:47.923Z"
+    }
+  ],
+  [
+    "deutsche-welle-VVMgdnMuIEly",
+    {
+      "id": "deutsche-welle-VVMgdnMuIEly",
+      "lat": 32.218156118071526,
+      "lon": 53.93129416243222,
+      "date": "2026-03-14T08:12:00.000Z",
+      "type": "Deutsche Welle: US vs. Iran: Three generations of conflict",
+      "description": "Three key moments that shaped Iranian and American attitudes toward each other — and show why mistrust endures.",
+      "source": "Deutsche Welle",
+      "category": "social",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Geopolitical",
+        "keyIndicators": [
+          "Increased tensions between the US and Iran following the assassination of Iranian General Qasem Soleimani in 2020",
+          "Escalating US sanctions on Iran and its subsequent impact on the country's economy",
+          "Iran's nuclear program and the ongoing US efforts to limit its capabilities"
+        ],
+        "affectedRegions": [
+          "Middle East",
+          "Persian Gulf"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The ongoing US-Iran conflict has its roots in a series of key moments, including the assassination of Iranian General Qasem Soleimani, the imposition of US sanctions, and the limits on Iran's nuclear program. These events have contributed to a deep-seated mistrust between the two nations, which continues to escalate tensions in the region.",
+        "recommendedActions": [
+          "Monitor US and Iranian media outlets for further developments and potential escalation",
+          "Track the impact of US sanctions on Iran's economy and its potential effects on regional stability"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:39:05.194Z"
+    }
+  ],
+  [
+    "deutsche-welle-UnVzc2lhIHdv",
+    {
+      "id": "deutsche-welle-UnVzc2lhIHdv",
+      "lat": 55.57926110361844,
+      "lon": 37.58678347460234,
+      "date": "2026-03-14T07:33:00.000Z",
+      "type": "Deutsche Welle: Russia working to 'tip scale' for Orban in Hungary",
+      "description": "Viktor Orban has long been pro-Russia. Now, there are signs that the Kremlin is working to secure his reelection and turning Hungary’s election into a referendum on whether voters want to be closer to",
+      "source": "Deutsche Welle",
+      "category": "social",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Geopolitical",
+        "keyIndicators": [
+          "Signs of Russian interference in Hungarian elections",
+          "Potential for Orban's reelection to shift Hungary's foreign policy",
+          "Increased tensions between Hungary and the EU"
+        ],
+        "affectedRegions": [
+          "Hungary",
+          "Europe"
+        ],
+        "sentiment": "Neutral",
+        "escalationPotential": "High",
+        "summary": "Russia is actively working to influence Hungary's upcoming election, potentially altering the country's foreign policy alignment and further straining relations with the EU.",
+        "recommendedActions": [
+          "Monitor Hungarian election developments closely for signs of Russian interference",
+          "Escalate diplomatic efforts with the EU to address concerns about Russian meddling"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:40:12.837Z"
+    }
+  ],
+  [
+    "deutsche-welle-J1dob2V2ZXIg",
+    {
+      "id": "deutsche-welle-J1dob2V2ZXIg",
+      "lat": 48.329480823979324,
+      "lon": 31.336362703170924,
+      "date": "2026-03-13T20:08:00.000Z",
+      "type": "Deutsche Welle: 'Whoever wins the drone war in Ukraine dominates.'",
+      "description": "From reconnaissance drones to ground robots, high-tech systems play a key role in Ukraine’s defense. In the Kharkiv region, DW witnessed how they operate firsthand.",
+      "source": "Deutsche Welle",
+      "category": "social",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Military",
+        "keyIndicators": [
+          "Ukraine's use of high-tech systems in defense",
+          "Growing importance of drones in modern warfare",
+          "Potential for escalation in the conflict"
+        ],
+        "affectedRegions": [
+          "Ukraine"
+        ],
+        "sentiment": "Neutral",
+        "escalationPotential": "High",
+        "summary": "Deutsche Welle reports on Ukraine's use of high-tech systems, including drones, in its defense against Russian aggression. This development could potentially escalate the conflict and has significant implications for global security.",
+        "recommendedActions": [
+          "Monitor Ukraine's military activities and technology advancements",
+          "Track developments in the drone war in Ukraine and its potential implications for global security"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:40:58.114Z"
+    }
+  ],
+  [
+    "deutsche-welle-QXMgSXJhbiB3",
+    {
+      "id": "deutsche-welle-QXMgSXJhbiB3",
+      "lat": 30.978359793465806,
+      "lon": 34.90971453424249,
+      "date": "2026-03-13T19:39:00.000Z",
+      "type": "Deutsche Welle: As Iran war rages, Gulf neighbors worry about secu",
+      "description": "As Israel and the United States continue to pummel Iran and Iran retaliates with rockets throughout the region, experts say a return to diplomacy is needed to end the war.",
+      "source": "Deutsche Welle",
+      "category": "social",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Geopolitical",
+        "keyIndicators": [
+          "Ongoing conflict between Israel, US, and Iran; Increased regional instability; Possibility of diplomatic return"
+        ],
+        "affectedRegions": [
+          "Middle East",
+          "Gulf region"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The ongoing conflict between Israel, the US, and Iran is causing significant regional instability, with Gulf neighbors expressing concerns about security. A return to diplomacy is crucial to ending the war and preventing further escalation.",
+        "recommendedActions": [
+          "Monitor regional developments closely for signs of diplomacy or conflict escalation",
+          "Maintain open communication channels with Gulf neighbors to assess their security concerns and provide reassurance"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:41:44.129Z"
+    }
+  ],
+  [
+    "nvd-CVE-1999-0426",
+    {
+      "id": "nvd-CVE-1999-0426",
+      "lat": 37.77706339095326,
+      "lon": -122.15230577587941,
+      "date": "1999-03-01T05:00:00.000",
+      "type": "CVE: CVE-1999-0426 (CVSS 9.8)",
+      "description": "The default permissions of /dev/kmem in Linux versions before 2.0.36 allows IP spoofing.",
+      "source": "NVD/NIST",
+      "category": "cyber",
+      "severity": "critical",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Cyber",
+        "keyIndicators": [
+          "Default /dev/kmem permissions in Linux versions before 2.0.36 allow IP spoofing."
+        ],
+        "affectedRegions": [
+          "Global"
+        ],
+        "sentiment": "Neutral",
+        "escalationPotential": "High",
+        "summary": "A critical vulnerability in the default Linux permissions of /dev/kmem allows IP spoofing, compromising the security of Linux systems before version 2.0.36.",
+        "recommendedActions": [
+          "Apply a patch or upgrade to Linux version 2.0.36 or later.",
+          "Review and adjust Linux permissions to prevent IP spoofing."
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:43:25.362Z"
+    }
+  ],
+  [
+    "nvd-CVE-1999-1324",
+    {
+      "id": "nvd-CVE-1999-1324",
+      "lat": 47.59865259794142,
+      "lon": -123.02643005950283,
+      "date": "1999-12-31T05:00:00.000",
+      "type": "CVE: CVE-1999-1324 (CVSS 9.8)",
+      "description": "VAXstations running Open VMS 5.3 through 5.5-2 with VMS DECwindows or MOTIF do not properly disable access to user accounts that exceed the break-in limit threshold for failed login attempts, which ma",
+      "source": "NVD/NIST",
+      "category": "cyber",
+      "severity": "critical",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Cyber",
+        "keyIndicators": [
+          "VAXstation",
+          "Open VMS",
+          "VMS DECwindows or MOTIF",
+          "Break-in limit threshold exceeded",
+          "Failed login attempts"
+        ],
+        "affectedRegions": [
+          "North America"
+        ],
+        "sentiment": "Neutral",
+        "escalationPotential": "High",
+        "summary": "A critical vulnerability was discovered in VAXstations running Open VMS 5.3 through 5.5-2, allowing unauthorized access to user accounts that exceed the break-in limit threshold for failed login attempts.",
+        "recommendedActions": [
+          "Patch VMS DECwindows or MOTIF immediately",
+          "Monitor for suspicious login activity and implement additional security measures"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:44:24.595Z"
+    }
+  ],
+  [
+    "nvd-CVE-2000-1218",
+    {
+      "id": "nvd-CVE-2000-1218",
+      "lat": 47.59290778938766,
+      "lon": -121.91642326530207,
+      "date": "2000-04-14T04:00:00.000",
+      "type": "CVE: CVE-2000-1218 (CVSS 9.8)",
+      "description": "The default configuration for the domain name resolver for Microsoft Windows 98, NT 4.0, 2000, and XP sets the QueryIpMatching parameter to 0, which causes Windows to accept DNS updates from hosts tha",
+      "source": "NVD/NIST",
+      "category": "cyber",
+      "severity": "critical",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Cyber",
+        "keyIndicators": [
+          {
+            "name": "Default DNS configuration vulnerability",
+            "description": "Windows accepts DNS updates from hosts with IP addresses that are not in the DNS cache",
+            "type": "Vulnerability",
+            "severity": "High"
+          },
+          {
+            "name": "QueryIpMatching parameter",
+            "description": "Set to 0, allowing DNS updates from unknown hosts",
+            "type": "Configuration setting",
+            "severity": "Critical"
+          },
+          {
+            "name": "CVE-2000-1218",
+            "description": "Specific vulnerability in Windows 98, NT 4.0, 2000, and XP",
+            "type": "Vulnerability",
+            "severity": "High"
+          }
+        ],
+        "affectedRegions": [
+          {
+            "name": "Global",
+            "description": "Affects all versions of Windows 98, NT 4.0, 2000, and XP",
+            "type": "Global impact"
+          }
+        ],
+        "sentiment": "Neutral",
+        "escalationPotential": "High",
+        "summary": "The default DNS configuration for Windows 98, NT 4.0, 2000, and XP sets the QueryIpMatching parameter to 0, allowing DNS updates from hosts with unknown IP addresses. This creates a vulnerability that can be exploited by attackers.",
+        "recommendedActions": [
+          {
+            "name": "Update DNS configuration",
+            "description": "Set QueryIpMatching to 1 to prevent DNS updates from unknown hosts",
+            "type": "Patch/fix"
+          },
+          {
+            "name": "Patch Windows",
+            "description": "Apply the security patch to Windows 98, NT 4.0, 2000, and XP to fix the vulnerability",
+            "type": "Patch/fix"
+          }
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:45:50.097Z"
+    }
+  ],
+  [
+    "nvd-CVE-2000-0944",
+    {
+      "id": "nvd-CVE-2000-0944",
+      "lat": 38.087390533357755,
+      "lon": -95.20913105069349,
+      "date": "2000-12-19T05:00:00.000",
+      "type": "CVE: CVE-2000-0944 (CVSS 9.8)",
+      "description": "CGI Script Center News Update 1.1 does not properly validate the original news administration password during a password change operation, which allows remote attackers to modify the password without ",
+      "source": "NVD/NIST",
+      "category": "cyber",
+      "severity": "critical",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Cyber",
+        "keyIndicators": [
+          "Remote attackers can modify the original news administration password without authorization.",
+          "Vulnerable system: CGI Script Center News Update 1.1"
+        ],
+        "affectedRegions": [
+          "United States"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "A critical vulnerability (CVE: CVE-2000-0944) in the CGI Script Center News Update 1.1 allows remote attackers to modify the original news administration password, posing a significant threat to system security.",
+        "recommendedActions": [
+          "Update to the latest version of the CGI Script Center News Update 1.1.",
+          "Implement additional security measures to prevent unauthorized access to the system."
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:46:44.317Z"
+    }
+  ],
+  [
+    "nvd-CVE-2001-1339",
+    {
+      "id": "nvd-CVE-2001-1339",
+      "lat": 37.66773016977114,
+      "lon": -96.51369542463472,
+      "date": "2001-05-24T04:00:00.000",
+      "type": "CVE: CVE-2001-1339 (CVSS 9.8)",
+      "description": "Beck IPC GmbH IPC@CHIP telnet service does not delay or disconnect users from the service when bad passwords are entered, which makes it easier for remote attackers to conduct brute force password gue",
+      "source": "NVD/NIST",
+      "category": "cyber",
+      "severity": "critical",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Cyber",
+        "keyIndicators": [
+          "Unauthenticated brute force access to IPC@CHIP telnet service",
+          "Lack of rate limiting or disconnect mechanism for invalid login attempts",
+          "Potential for remote attackers to exploit this vulnerability"
+        ],
+        "affectedRegions": [
+          "North America"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The CVE-2001-1339 vulnerability in the IPC@CHIP telnet service makes it easier for remote attackers to conduct brute force password guessing attacks, posing a critical threat to users of the service.",
+        "recommendedActions": [
+          "Apply a rate limiter to the telnet service to limit the number of login attempts within a certain time frame",
+          "Implement a disconnect mechanism to immediately disconnect users from the service after a specified number of invalid login attempts"
+        ],
+        "notes": "This vulnerability was discovered in 2001 and has a CVSS score of 9.8, indicating a critical level of severity. It is recommended to update the affected service to a version that includes this fix as soon as possible."
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:47:48.304Z"
+    }
+  ],
+  [
+    "eonet-EONET_18526",
+    {
+      "id": "eonet-EONET_18526",
+      "lat": 35.6423,
+      "lon": -102.16138,
+      "date": "2026-03-10T22:40:00Z",
+      "type": "Wildfires: Yellow Wildfire, Moore, Texas",
+      "description": "Yellow Wildfire, Moore, Texas",
+      "source": "NASA EONET",
+      "category": "weather",
+      "severity": "medium",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Natural",
+        "keyIndicators": [
+          "Spread of wildfire",
+          "Temperature",
+          "Humidity",
+          "Wind Speed"
+        ],
+        "affectedRegions": [
+          "Moore, Texas"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The Yellow Wildfire in Moore, Texas is currently at a critical level. The fire, as of the provided date, has spread rapidly due to high temperatures, low humidity, and strong winds. The potential for escalation is high, with the affected region currently facing a significant threat.",
+        "recommendedActions": [
+          "Evacuation of affected areas",
+          "Mobilization of firefighting resources",
+          "Issuing warnings and alerts to the public",
+          "Coordinating with local authorities to establish emergency shelters"
+        ]
+      },
+      "modelUsed": "mistral:latest",
+      "analyzedAt": "2026-03-14T22:49:10.458Z"
+    }
+  ],
+  [
+    "eonet-EONET_18531",
+    {
+      "id": "eonet-EONET_18531",
+      "lat": 34.974698,
+      "lon": -93.885147,
+      "date": "2026-03-10T17:12:00Z",
+      "type": "Wildfires: RX PCS White Oak Prescribed Fire, Scott, Arkansas",
+      "description": "RX PCS White Oak Prescribed Fire, Scott, Arkansas",
+      "source": "NASA EONET",
+      "category": "weather",
+      "severity": "medium",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Natural",
+        "keyIndicators": [
+          "Fire spread rate",
+          "Wind speed and direction",
+          "Humidity levels",
+          "Temperature"
+        ],
+        "affectedRegions": [
+          "Scott, Arkansas"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The RX PCS White Oak Prescribed Fire in Scott, Arkansas has escalated to a wildfire, with critical threat levels due to high wind speeds, low humidity, and high temperatures. The fire has the potential to spread rapidly and pose a significant risk to the local population and infrastructure.",
+        "recommendedActions": [
+          "Evacuation of affected areas",
+          "Activation of emergency response teams",
+          "Aerial monitoring and containment efforts",
+          "Public advisories and information dissemination"
+        ]
+      },
+      "modelUsed": "mistral:latest",
+      "analyzedAt": "2026-03-14T22:50:01.889Z"
+    }
+  ],
+  [
+    "eonet-EONET_18527",
+    {
+      "id": "eonet-EONET_18527",
+      "lat": 35.422,
+      "lon": -100.753,
+      "date": "2026-03-09T17:52:00Z",
+      "type": "Wildfires: Cabin Creek Wildfire, Gray, Texas",
+      "description": "Cabin Creek Wildfire, Gray, Texas",
+      "source": "NASA EONET",
+      "category": "weather",
+      "severity": "medium",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Natural",
+        "keyIndicators": [
+          "Area affected by wildfire",
+          "Number of structures threatened",
+          "Weather conditions contributing to fire spread"
+        ],
+        "affectedRegions": [
+          "Gray, Texas"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The Cabin Creek Wildfire in Gray, Texas has reached a critical level, threatening numerous structures and spreading rapidly due to current weather conditions.",
+        "recommendedActions": [
+          "Evacuation of residents in the affected area",
+          "Mobilization of firefighting resources",
+          "Monitoring of weather patterns and wind speed to predict fire spread"
+        ]
+      },
+      "modelUsed": "mistral:latest",
+      "analyzedAt": "2026-03-14T22:51:00.966Z"
+    }
+  ],
+  [
+    "eonet-EONET_18532",
+    {
+      "id": "eonet-EONET_18532",
+      "lat": 43.699,
+      "lon": -105.647467,
+      "date": "2026-03-09T15:37:00Z",
+      "type": "Wildfires: Porcupine Creek Wildfire, Campbell, Wyoming",
+      "description": "Porcupine Creek Wildfire, Campbell, Wyoming",
+      "source": "NASA EONET",
+      "category": "weather",
+      "severity": "medium",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Natural",
+        "keyIndicators": [
+          "Spread of the wildfire",
+          "Wind conditions",
+          "Temperature and humidity levels"
+        ],
+        "affectedRegions": [
+          "Campbell, Wyoming"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The Porcupine Creek Wildfire in Campbell, Wyoming has reached a critical level, with the potential for rapid spread due to high temperatures, low humidity, and favorable wind conditions. The affected region is currently at risk.",
+        "recommendedActions": [
+          "Evacuation of residents in the affected area",
+          "Deployment of firefighting resources",
+          "Implementing emergency response plans",
+          "Monitoring weather conditions closely"
+        ]
+      },
+      "modelUsed": "mistral:latest",
+      "analyzedAt": "2026-03-14T22:52:14.200Z"
+    }
+  ],
+  [
+    "eonet-EONET_18536",
+    {
+      "id": "eonet-EONET_18536",
+      "lat": 47.54961,
+      "lon": -110.27752,
+      "date": "2026-03-08T19:26:00Z",
+      "type": "Wildfires: Rock Ridge Wildfire, Chouteau, Montana",
+      "description": "Rock Ridge Wildfire, Chouteau, Montana",
+      "source": "NASA EONET",
+      "category": "weather",
+      "severity": "medium",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Natural",
+        "keyIndicators": [
+          "Spreading Wildfire",
+          "Dry Conditions",
+          "Strong Winds"
+        ],
+        "affectedRegions": [
+          "Montana",
+          "Adjacent States"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The Rock Ridge Wildfire in Chouteau, Montana, has been reported, with critical threat levels due to the spreading fire, dry conditions, and strong winds. The affected region includes Montana and adjacent states.",
+        "recommendedActions": [
+          "Evacuation of nearby areas, Mobilization of firefighting resources, Issuance of emergency alerts, Monitoring of weather patterns, Coordination with neighboring states for resources"
+        ]
+      },
+      "modelUsed": "mistral:latest",
+      "analyzedAt": "2026-03-14T22:53:11.511Z"
+    }
+  ],
+  [
+    "power-ua-zaporizhzhia",
+    {
+      "id": "power-ua-zaporizhzhia",
+      "lat": 47.506,
+      "lon": 34.584,
+      "date": "2026-03-14T04:05:32.711Z",
+      "type": "Nuclear Risk: Zaporizhzhia",
+      "description": "Europe's largest nuclear plant under military control — IAEA monitoring for safety. External power repeatedly disrupted",
+      "source": "IAEA",
+      "category": "land",
+      "severity": "critical",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Military",
+        "keyIndicators": [
+          "IAEA monitoring for safety indicates potential nuclear risk due to repeated power disruptions",
+          "External power disruptions could compromise nuclear plant's cooling systems",
+          "Nuclear plant's status under military control raises concerns about potential nuclear incident"
+        ],
+        "affectedRegions": [
+          "Europe",
+          "Ukraine"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "The Zaporizhzhia nuclear plant, Europe's largest, is under military control and has been experiencing repeated disruptions to its power supply, raising concerns about potential nuclear incidents. IAEA monitoring indicates a critical situation that requires immediate attention. The situation has the potential to escalate into a nuclear crisis if not addressed promptly.",
+        "recommendedActions": [
+          "Immediately establish communication with Ukrainian authorities and international partners to assess the situation and provide assistance if necessary",
+          "Activate NATO's nuclear emergency response protocols to provide support and guidance to Ukraine and the IAEA"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:55:02.434Z"
+    }
+  ],
+  [
+    "power-gaza-electricity",
+    {
+      "id": "power-gaza-electricity",
+      "lat": 31.3547,
+      "lon": 34.3088,
+      "date": "2026-03-14T04:05:32.711Z",
+      "type": "Infrastructure: Gaza Power",
+      "description": "Gaza's sole power plant offline — population reliant on generators, fuel shortages critical",
+      "source": "OCHA",
+      "category": "land",
+      "severity": "critical",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Humanitarian",
+        "keyIndicators": [
+          "Gaza's power plant is the sole source of electricity for the population, with no backup or alternative power sources.",
+          "Fuel shortages are critical, with limited supplies and no guarantee of delivery.",
+          "The prolonged outage poses significant risks to public health, food security, and overall stability."
+        ],
+        "affectedRegions": [
+          "Gaza"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "A critical power outage in Gaza has left the population reliant on generators, exacerbating fuel shortages and posing significant risks to public health and stability.",
+        "recommendedActions": [
+          "Ensure immediate delivery of fuel to Gaza's power plant and distribution to generators to alleviate the shortage.",
+          "Coordinate with humanitarian organizations to provide alternative power sources, such as mobile generators or solar-powered systems, to support vulnerable populations."
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:56:07.671Z"
+    }
+  ],
+  [
+    "power-texas-grid",
+    {
+      "id": "power-texas-grid",
+      "lat": 31.9686,
+      "lon": -99.9018,
+      "date": "2026-03-14T04:05:32.711Z",
+      "type": "Grid Vulnerability: ERCOT Texas",
+      "description": "Texas independent grid isolated from national network — elevated risk during extreme weather events",
+      "source": "ERCOT",
+      "category": "land",
+      "severity": "medium",
+      "analysis": {
+        "threatLevel": "Critical",
+        "threatCategory": "Natural",
+        "keyIndicators": [
+          "Grid infrastructure vulnerabilities during extreme weather events",
+          "Isolation from national network increases vulnerability to cascading failures",
+          "Potential for widespread power outages and disruptions to critical infrastructure"
+        ],
+        "affectedRegions": [
+          "Texas, USA"
+        ],
+        "sentiment": "Negative",
+        "escalationPotential": "High",
+        "summary": "A critical vulnerability exists in the ERCOT Texas grid due to its isolation from the national network, which increases the risk of cascading failures during extreme weather events. This could lead to widespread power outages and disruptions to critical infrastructure. Immediate attention is required to assess and mitigate this risk.",
+        "recommendedActions": [
+          "Conduct a thorough risk assessment and develop contingency plans to mitigate the effects of extreme weather events on the ERCOT Texas grid",
+          "Collaborate with other regional grids to develop coordinated response strategies and share best practices in grid resilience"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:57:28.536Z"
+    }
+  ],
+  [
+    "power-europe-gas",
+    {
+      "id": "power-europe-gas",
+      "lat": 50,
+      "lon": 15,
+      "date": "2026-03-14T04:05:32.711Z",
+      "type": "Energy Security: Europe",
+      "description": "European energy supply diversification post-Russia — LNG terminal expansions, storage at 65%",
+      "source": "IEA",
+      "category": "land",
+      "severity": "medium",
+      "analysis": {
+        "threatLevel": "High",
+        "threatCategory": "Geopolitical",
+        "keyIndicators": [
+          "Increasing reliance on LNG imports from non-Russian suppliers",
+          "65% of European energy storage capacity being utilized",
+          "LNG terminal expansions expected to continue post-2026"
+        ],
+        "affectedRegions": [
+          "Europe"
+        ],
+        "sentiment": "Neutral",
+        "escalationPotential": "Medium",
+        "summary": "The European energy supply diversification efforts post-Russia are proceeding as expected, with significant investments in LNG terminal expansions and energy storage. However, the high dependence on non-Russian LNG suppliers and storage capacity raises concerns about the long-term sustainability of this strategy. The situation remains stable for now, but ongoing monitoring is necessary to mitigate potential disruptions.",
+        "recommendedActions": [
+          "Monitor LNG terminal expansions and storage capacity utilization closely",
+          "Evaluate the potential risks and benefits of increasing investments in alternative energy sources"
+        ]
+      },
+      "modelUsed": "llama3.2:latest",
+      "analyzedAt": "2026-03-14T22:58:39.653Z"
+    }
+  ]
+]

@@ -64,6 +64,8 @@ class ConflictGlobeAI {
     constructor() {
         this.availableModels = [];
         this.analyzedEvents = new Map();
+        this.conversationHistory = [];
+        this.maxHistory = 50;
     }
 
     async init() {
@@ -71,6 +73,56 @@ class ConflictGlobeAI {
         await this.fetchAvailableModels();
         console.log('Available models: ' + this.availableModels.join(', '));
         await this.loadData();
+        await this.loadHistory();
+    }
+
+    async loadHistory() {
+        try {
+            await fs.mkdir(STORAGE_DIR, { recursive: true });
+            try {
+                const data = await fs.readFile(path.join(STORAGE_DIR, 'conversation-history.json'), 'utf8');
+                this.conversationHistory = JSON.parse(data);
+            } catch {
+                this.conversationHistory = [];
+            }
+        } catch (error) {
+            console.error('Error loading history:', error.message);
+        }
+    }
+
+    async saveHistory() {
+        try {
+            await fs.writeFile(
+                path.join(STORAGE_DIR, 'conversation-history.json'),
+                JSON.stringify(this.conversationHistory.slice(-this.maxHistory), null, 2)
+            );
+        } catch (error) {
+            console.error('Error saving history:', error.message);
+        }
+    }
+
+    addToHistory(role, content, context = {}) {
+        this.conversationHistory.push({
+            role,
+            content,
+            context,
+            timestamp: new Date().toISOString()
+        });
+        if (this.conversationHistory.length > this.maxHistory) {
+            this.conversationHistory = this.conversationHistory.slice(-this.maxHistory);
+        }
+    }
+
+    getContextSummary() {
+        if (this.conversationHistory.length === 0) {
+            return "No previous context available.";
+        }
+        
+        const recent = this.conversationHistory.slice(-10);
+        const events = recent.filter(h => h.context?.eventId).map(h => h.context.eventId);
+        const categories = recent.filter(h => h.context?.category).map(h => h.context.category);
+        
+        return `Recent analysis covered: ${[...new Set(categories)].join(', ')}. Events analyzed: ${events.length}.`;
     }
 
     async loadData() {
@@ -133,7 +185,11 @@ class ConflictGlobeAI {
         const category = event.category || 'conflict';
         const modelConfig = this.getModelForCategory(category);
         
+        const contextSummary = this.getContextSummary();
+        
         const prompt = `${modelConfig.prompt}
+
+CONTEXT: ${contextSummary}
 
 Analyze this event and provide structured intelligence:
 
@@ -158,12 +214,19 @@ Provide your analysis in JSON format:
 }`;
 
         try {
+            const messages = [
+                { role: 'system', content: modelConfig.prompt },
+            ];
+            
+            this.conversationHistory.slice(-5).forEach(msg => {
+                messages.push({ role: msg.role, content: msg.content.substring(0, 500) });
+            });
+            
+            messages.push({ role: 'user', content: prompt });
+            
             const response = await axios.post(OLLAMA_API + '/chat', {
                 model: modelConfig.model,
-                messages: [
-                    { role: 'system', content: modelConfig.prompt },
-                    { role: 'user', content: prompt }
-                ],
+                messages: messages,
                 stream: false
             });
 
@@ -184,6 +247,17 @@ Provide your analysis in JSON format:
                     this.analyzedEvents.set(event.id, result);
                     await this.saveData();
                 }
+                
+                this.addToHistory('user', `Event: ${event.type} - ${analysis.summary}`, { 
+                    eventId: event.id, 
+                    category: category,
+                    threatLevel: analysis.threatLevel 
+                });
+                this.addToHistory('assistant', analysis.summary, { 
+                    eventId: event.id,
+                    threatLevel: analysis.threatLevel 
+                });
+                await this.saveHistory();
                 
                 return result;
             }

@@ -17,6 +17,7 @@ import { fetchAllScrapedData, fetchEMSCearthquakes, fetchUSGSearthquakes, fetchN
 import { fetchPublicCameras, fetchEarthCamFeeds, fetchWebCamTaxi, fetchWindyCameras } from "../services/cameras";
 import { fetchGlobalNews } from "../services/news";
 import { fetchGdeltevents } from "../services/gdelt";
+import { fetchFlightData, fetchMilitaryFlights, fetchAirspaceAlerts, fetchDroneZones } from "../services/flights";
 
 const router = Router();
 
@@ -73,7 +74,8 @@ async function getAirEvents(): Promise<EventData[]> {
   return cached("air", TTL.live, async () => {
     const results = await Promise.allSettled([
       fetchAirTraffic(), fetchMilitaryAircraft(), fetchADSBExchange(),
-      fetchOpenSkyNetwork(),
+      fetchOpenSkyNetwork(), fetchFlightData(), fetchMilitaryFlights(),
+      fetchAirspaceAlerts(), fetchDroneZones(),
     ]);
     return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
   });
