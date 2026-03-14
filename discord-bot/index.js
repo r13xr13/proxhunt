@@ -144,35 +144,50 @@ async function fetchConflictData() {
     }
 }
 
-// AI-rewrite news headlines for #general channel
+// AI rewrite news for #general channel - write as original article
 async function rewriteNewsWithAI(newsItems) {
     try {
         const top3 = newsItems.slice(0, 3);
         const rewritten = [];
         
         for (const item of top3) {
-            const prompt = `Rewrite this news headline as your own original content (2-3 sentences). Keep the facts but write in a fresh, original style. Do NOT mention the source.
+            const content = item.contentSnippet || item.content || item.description || '';
+            const prompt = `Write a short news article (2-3 paragraphs) based on this headline and summary. Write in your own original words as a journalist would report it. Include context and what it means.
 
-Original: "${item.title}"
+Headline: "${item.title}"
+Summary: "${content.substring(0, 500)}"
 
-Write as if you are reporting this directly:`;
+Write the article now:`;
 
             const response = await axios.post(OLLAMA_BASE + '/chat', {
                 model: 'llama3.2:latest',
                 messages: [
-                    { role: 'system', content: 'You are a news reporter. Rewrite headlines in your own original words.' },
+                    { role: 'system', content: 'You are a professional news reporter. Write original articles in your own words based on headlines and summaries.' },
                     { role: 'user', content: prompt }
                 ],
                 stream: false
             });
             
-            const content = response.data.message.content.trim();
+            const article = response.data.message.content.trim();
             rewritten.push({
                 original: item.title,
-                rewritten: content,
+                article: article,
+                source: item.source,
                 pubDate: item.pubDate
             });
         }
+        
+        return rewritten;
+    } catch (error) {
+        console.error('Error rewriting news:', error.message);
+        return newsItems.slice(0, 3).map(item => ({
+            original: item.title,
+            article: item.contentSnippet || item.title,
+            source: item.source,
+            pubDate: item.pubDate
+        }));
+    }
+}
         
         return rewritten;
     } catch (error) {
@@ -243,25 +258,28 @@ async function sendScheduledUpdate() {
         const hour = new Date().getHours();
         const minute = new Date().getMinutes();
 
-        // #general: Top 3 AI-rewritten news headlines
+        // #general: Top 3 AI-written news articles (full content)
         if (generalChannel && newsItems && newsItems.length > 0) {
             const rewrittenNews = await rewriteNewsWithAI(newsItems);
             
             const generalEmbed = new EmbedBuilder()
                 .setTitle('> Global News Update')
-                .setDescription('Top stories rewritten in original content')
+                .setDescription('Top stories from around the world')
                 .setColor(0xFFA500)
                 .setTimestamp();
 
-            rewrittenNews.forEach((item, index) => {
-                generalEmbed.addFields({
-                    name: `> ${index + 1}. ${item.rewritten.substring(0, 100)}`,
-                    value: `> ${new Date(item.pubDate).toLocaleTimeString()}`,
-                    inline: false
-                });
-            });
-
             await generalChannel.send({ embeds: [generalEmbed] });
+
+            // Send each full article as separate message
+            for (const item of rewrittenNews) {
+                const articleEmbed = new EmbedBuilder()
+                    .setTitle(`> ${item.source}: ${item.original.substring(0, 100)}`)
+                    .setDescription(item.article)
+                    .setColor(0xFFA500)
+                    .setFooter({ text: new Date(item.pubDate).toLocaleString() });
+                
+                await generalChannel.send({ embeds: [articleEmbed] });
+            }
         }
 
         // #dev: Server stats only
