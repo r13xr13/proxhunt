@@ -24,7 +24,7 @@
 
 Conflict Globe is an open-source intelligence (OSINT) platform that aggregates and visualizes global conflict, maritime, air, cyber, and geopolitical events in real time on an interactive 3D globe. Built for analysts, researchers, and journalists who need a high-signal, low-latency view of world events.
 
-> **Demo**: [▶ Watch on YouTube](https://youtu.be/e52LPDBjIAQ)
+> **Demo**: [▶ Watch on YouTube](https://www.youtube.com/watch?v=EvRL27Z5uh4)
 >
 > **Discord**: [Join the community](https://discord.gg/zRyBE6S7YG)
 
