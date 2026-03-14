@@ -1,6 +1,6 @@
 <div align="center">
 
-# Conflict Globe 
+# Conflict Globe 🌍
 
 **A real-time 3D OSINT visualization platform for global conflict and geopolitical events**
 
@@ -8,6 +8,7 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/r13xr13/conflict-globe.gl/releases)
 [![TypeScript](https://img.shields.io/badge/TypeScript-98%25-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
+[![npm](https://img.shields.io/badge/npm-%40c0smic%2Fconflict--globe-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/@c0smic/conflict-globe)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 [Demo](#demo) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Contributing](#contributing)
@@ -75,16 +76,25 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 
 ## Quick Start
 
-### Docker (Recommended)
+### npm (Easiest)
+
+Install the CLI globally and run the platform anywhere Node.js is available:
+
+```bash
+npm install -g @c0smic/conflict-globe
+conflict-globe start
+```
+
+The app will be available at `http://localhost:8080`.
+
+### Docker
 
 Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
 
 ```bash
 git clone https://github.com/r13xr13/conflict-globe.gl.git
 cd conflict-globe.gl
-
 docker compose up -d
-
 open http://localhost:8080
 ```
 
@@ -208,6 +218,35 @@ NODE_ENV=production
 
 ```bash
 docker compose up -d
+```
+
+---
+
+## Publishing a Release
+
+### npm
+
+```bash
+# Login to npm
+npm login
+
+# Publish publicly
+npm publish --access public
+```
+
+Once published, users can install globally:
+
+```bash
+npm install -g @c0smic/conflict-globe
+conflict-globe start
+```
+
+### Bump the version
+
+```bash
+npm version patch   # 1.0.0 → 1.0.1
+npm version minor   # 1.0.0 → 1.1.0
+npm version major   # 1.0.0 → 2.0.0
 ```
 
 ---
