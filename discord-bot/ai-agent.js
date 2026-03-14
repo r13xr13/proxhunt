@@ -4,6 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_API = OLLAMA_BASE + '/api';
 const CONFLICT_GLOBE_API = process.env.CONFLICT_GLOBE_API || 'http://localhost:8080/api/conflicts';
 const STORAGE_DIR = path.join(__dirname, 'threat-data');
 
@@ -100,7 +101,7 @@ class ConflictGlobeAI {
 
     async fetchAvailableModels() {
         try {
-            const response = await axios.get(OLLAMA_BASE + '/tags');
+            const response = await axios.get(OLLAMA_API + '/tags');
             this.availableModels = response.data.models.map(m => m.name);
         } catch (error) {
             console.error('Error fetching models:', error.message);
@@ -157,7 +158,7 @@ Provide your analysis in JSON format:
 }`;
 
         try {
-            const response = await axios.post(OLLAMA_BASE + '/chat', {
+            const response = await axios.post(OLLAMA_API + '/chat', {
                 model: modelConfig.model,
                 messages: [
                     { role: 'system', content: modelConfig.prompt },

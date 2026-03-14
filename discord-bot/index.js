@@ -189,17 +189,6 @@ Write the article now:`;
         }));
     }
 }
-        
-        return rewritten;
-    } catch (error) {
-        console.error('Error rewriting news:', error.message);
-        return newsItems.slice(0, 3).map(item => ({
-            original: item.title,
-            rewritten: item.title,
-            pubDate: item.pubDate
-        }));
-    }
-}
 
 // Fetch live conflict events for #live-updates
 async function sendLiveUpdates() {
