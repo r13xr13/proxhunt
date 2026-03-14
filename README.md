@@ -200,20 +200,6 @@ conflict-globe.gl/
 
 ---
 
-## Deployment
-
-### Railway (Cloud — Recommended)
-
-1. Connect your GitHub repo to [Railway](https://railway.app)
-2. Railway auto-detects the Dockerfile — no extra config needed
-3. Add environment variables in the Railway dashboard
-4. Every push to `main` triggers an automatic redeploy
-
-```env
-PORT=8080
-NODE_ENV=production
-```
-
 ### Self-Hosted
 
 ```bash
