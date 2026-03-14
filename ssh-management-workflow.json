@@ -15,7 +15,7 @@
     },
     {
       "parameters": {
-        "host": "localhost",
+        "host": "host.docker.internal",
         "port": 22,
         "command": "docker ps --filter name=conflict --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'",
         "options": {}
@@ -28,7 +28,7 @@
     },
     {
       "parameters": {
-        "host": "localhost",
+        "host": "host.docker.internal",
         "port": 22,
         "command": "docker stats --no-stream --format '{{.Name}}: {{.CPUPerc}} {{.MemUsage}}'",
         "options": {}
@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "host": "localhost",
+        "host": "host.docker.internal",
         "port": 22,
         "command": "curl -s http://localhost:8080/api/health",
         "options": {}
@@ -54,7 +54,7 @@
     },
     {
       "parameters": {
-        "host": "localhost",
+        "host": "host.docker.internal",
         "port": 22,
         "command": "curl -s http://localhost:5678",
         "options": {}
