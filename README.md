@@ -211,10 +211,22 @@ conflict-globe.gl/
 3. Add environment variables in the Railway dashboard
 4. Every push to `main` triggers an automatic redeploy
 
+**Required Environment Variables:**
 ```env
 PORT=8080
 NODE_ENV=production
 ```
+
+**AI / Ollama Configuration (External):**
+```env
+# Point to your external Ollama instance
+OLLAMA_BASE_URL=http://host.docker.internal:11434  # For local machine access
+# OR
+OLLAMA_BASE_URL=https://your-ollama-server.com      # For remote server
+OLLAMA_MODEL=llama3.2:latest
+```
+
+**Note:** The Docker container no longer includes Ollama. You need to run Ollama separately on your local machine or another server and configure `OLLAMA_BASE_URL` to point to it.
 
 ### Self-Hosted
 
