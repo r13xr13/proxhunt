@@ -259,4 +259,15 @@ router.get("/ai/provider", async (req, res) => {
   });
 });
 
+// Get SDR radio signals endpoint
+router.get("/radio", async (_req, res) => {
+  try {
+    const signals = await getRadioEvents();
+    res.json({ events: signals });
+  } catch (error) {
+    console.error("Radio signals error:", error);
+    res.status(500).json({ error: "Failed to fetch radio signals" });
+  }
+});
+
 export default router;
