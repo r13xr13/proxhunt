@@ -17,6 +17,10 @@ A real-time 3D OSINT visualization platform for global conflict and geopolitical
 
 </div>
 
+> **Demo**: [▶ Watch on YouTube](https://www.youtube.com/watch?v=EvRL27Z5uh4)
+>
+> **Discord**: [Join the community](https://discord.gg/zRyBE6S7YG)
+
 ---
 
 ## Overview
