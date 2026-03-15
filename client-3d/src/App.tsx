@@ -71,7 +71,7 @@ interface LayerState {
 }
 
 type GlobeTheme = "dark" | "light" | "satellite" | "terrain";
-type LeftTab = "layers" | "categories" | "filters" | "import" | "settings" | "aiChat";
+type LeftTab = "layers" | "categories" | "filters" | "import" | "settings" | "aiChat" | "sdr";
 type RightTab = "details" | "analytics" | "entities" | "timeline";
 type ReportType = "summary" | "detailed" | "analytics";
 type DrawMode = "none" | "circle" | "polygon" | "line";
@@ -242,9 +242,23 @@ export default function App() {
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [showBottomPanel, setShowBottomPanel] = useState(false);
   const [roomInput, setRoomInput] = useState("");
+  
+  // AI Chat state
   const [aiChatInput, setAIChatInput] = useState("");
   const [aiChatMessages, setAIChatMessages] = useState<{role: string, content: string}[]>([]);
   const [aiChatLoading, setAIChatLoading] = useState(false);
+  
+  // Antenna Agent Chat state
+  const [antennaChatInput, setAntennaChatInput] = useState("");
+  const [antennaChatMessages, setAntennaChatMessages] = useState<{role: string, content: string}[]>([]);
+  const [antennaChatLoading, setAntennaChatLoading] = useState(false);
+  
+  // SDR Radio state
+  const [sdrSignals, setSdrSignals] = useState<any[]>([]);
+  const [selectedSdrSignal, setSelectedSdrSignal] = useState<any>(null);
+  const [sdrFrequency, setSdrFrequency] = useState(11000);
+  const [sdrMode, setSdrMode] = useState("USB");
+  const [sdrBandwidth, setSdrBandwidth] = useState(2400);
 
   // Live feed
   const [liveFeedItems, setLiveFeedItems] = useState<{ id: string; time: Date; message: string; type: string; severity: string }[]>([]);
@@ -275,6 +289,70 @@ export default function App() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // ── SDR Radio functions ──
+  const loadSDRSignals = useCallback(async () => {
+    try {
+      const res = await fetch("/api/radio");
+      const data = await res.json();
+      setSdrSignals(data.events || []);
+    } catch (e) {
+      console.error("Failed to load SDR signals:", e);
+    }
+  }, []);
+
+  useEffect(() => { loadSDRSignals(); }, [loadSDRSignals]);
+
+  // ── AI Chat functions ──
+  const sendAIMessage = async (message: string) => {
+    if (!message.trim()) return;
+    
+    setAIChatLoading(true);
+    setAIChatMessages(prev => [...prev, { role: "user", content: message }]);
+    
+    try {
+      const response = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, history: aiChatMessages })
+      });
+      
+      const data = await response.json();
+      setAIChatMessages(prev => [...prev, { role: "assistant", content: data.response || "No response" }]);
+    } catch (error) {
+      console.error("AI chat error:", error);
+      setAIChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
+    } finally {
+      setAIChatLoading(false);
+    }
+  };
+
+  // ── Antenna Agent Chat functions ──
+  const sendAntennaMessage = async (message: string) => {
+    if (!message.trim()) return;
+    
+    setAntennaChatLoading(true);
+    setAntennaChatMessages(prev => [...prev, { role: "user", content: message }]);
+    
+    try {
+      // Connect to Antenna agent gateway (default: http://localhost:18790)
+      const antennaGateway = process.env.ANTENNA_GATEWAY_URL || "http://localhost:18790";
+      
+      const response = await fetch(`${antennaGateway}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+      
+      const data = await response.json();
+      setAntennaChatMessages(prev => [...prev, { role: "assistant", content: data.response || data.message || "No response" }]);
+    } catch (error) {
+      console.error("Antenna agent chat error:", error);
+      setAntennaChatMessages(prev => [...prev, { role: "assistant", content: "Could not connect to Antenna agent. Ensure it's running on port 18790." }]);
+    } finally {
+      setAntennaChatLoading(false);
+    }
+  };
+
   // ── LocalStorage ──
   useEffect(() => {
     try {
@@ -294,6 +372,14 @@ export default function App() {
       container.scrollTop = container.scrollHeight;
     }
   }, [aiChatMessages]);
+
+  // ── Antenna Chat auto-scroll ──
+  useEffect(() => {
+    const container = document.getElementById("antenna-chat-messages");
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [antennaChatMessages]);
 
   // ── Mobile detection ──
   useEffect(() => {
@@ -854,13 +940,15 @@ export default function App() {
           </div>
 
           <div className="tab-bar">
-            {([
-              ["layers", "⊞", "Layers"],
-              ["categories", "◈", "Categories"],
-              ["filters", "⊟", "Filters"],
-              ["import", "⊕", "Import"],
-              ["settings", "⚙", "Settings"],
-            ] as [LeftTab, string, string][]).map(([tab, icon, label]) => (
+             {([
+               ["layers", "⊞", "Layers"],
+               ["categories", "◈", "Categories"],
+               ["filters", "⊟", "Filters"],
+               ["import", "⊕", "Import"],
+               ["settings", "⚙", "Settings"],
+               ["aiChat", "🤖", "AI Chat"],
+               ["sdr", "📻", "SDR Radio"],
+             ] as [LeftTab, string, string][]).map(([tab, icon, label]) => (
               <button key={tab} className={cls("tab-btn", activeLeftTab === tab && "active")} onClick={() => setActiveLeftTab(tab)}>
                 <span className="tab-icon">{icon}</span>
                 {label}
@@ -1319,6 +1407,225 @@ export default function App() {
                     )}
                   </div>
                 </div>
+              </>
+            )}
+
+            {/* ── AI Chat tab ── */}
+            {activeLeftTab === "aiChat" && (
+              <>
+                <div className="section">
+                  <SectionLabel>AI Assistant</SectionLabel>
+                  <p style={{ fontSize: 11, color: "var(--text-2)", marginBottom: 12 }}>
+                    Chat with your AI assistant for conflict analysis and OSINT queries.
+                  </p>
+                  
+                  <div id="ai-chat-container" style={{ height: 300, overflow: "auto", padding: "10px", background: "var(--surface)", borderRadius: 6, marginBottom: 10 }}>
+                    <div id="ai-chat-messages" style={{ minHeight: 200 }}>
+                      {aiChatMessages.map((msg, i) => (
+                        <div key={i} style={{ marginBottom: 8, textAlign: msg.role === "user" ? "right" : "left" }}>
+                          <span style={{ 
+                            display: "inline-block", 
+                            padding: "8px 12px", 
+                            background: msg.role === "user" ? "var(--accent)" : "var(--surface2)", 
+                            borderRadius: 8,
+                            color: msg.role === "user" ? "#fff" : "var(--text)",
+                            maxWidth: "80%"
+                          }}>
+                            {msg.content}
+                          </span>
+                        </div>
+                      ))}
+                      {aiChatLoading && (
+                        <div style={{ textAlign: "center", color: "var(--text-3)" }}>Thinking...</div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <input 
+                        type="text" 
+                        placeholder="Ask about conflicts, signals, or anything..." 
+                        style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, background: "var(--surface2)", color: "var(--text)" }}
+                        value={aiChatInput}
+                        onChange={e => setAIChatInput(e.target.value)}
+                        onKeyPress={e => {
+                          if (e.key === "Enter") {
+                            sendAIMessage(aiChatInput);
+                            setAIChatInput("");
+                          }
+                        }}
+                      />
+                      <button 
+                        className="full-btn"
+                        style={{ padding: "8px 16px", fontSize: "0.875rem" }}
+                        onClick={() => {
+                          sendAIMessage(aiChatInput);
+                          setAIChatInput("");
+                        }}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section">
+                  <SectionLabel>Antenna Agent</SectionLabel>
+                  <p style={{ fontSize: 11, color: "var(--text-2)", marginBottom: 12 }}>
+                    Chat with the Antenna AI Agent framework. Connects to gateway on port 18790.
+                  </p>
+                  
+                  <div id="antenna-chat-container" style={{ height: 250, overflow: "auto", padding: "10px", background: "var(--surface)", borderRadius: 6, marginBottom: 10 }}>
+                    <div id="antenna-chat-messages" style={{ minHeight: 150 }}>
+                      {antennaChatMessages.map((msg, i) => (
+                        <div key={i} style={{ marginBottom: 8, textAlign: msg.role === "user" ? "right" : "left" }}>
+                          <span style={{ 
+                            display: "inline-block", 
+                            padding: "8px 12px", 
+                            background: msg.role === "user" ? "var(--accent)" : "var(--surface2)", 
+                            borderRadius: 8,
+                            color: msg.role === "user" ? "#fff" : "var(--text)",
+                            maxWidth: "80%"
+                          }}>
+                            {msg.content}
+                          </span>
+                        </div>
+                      ))}
+                      {antennaChatLoading && (
+                        <div style={{ textAlign: "center", color: "var(--text-3)" }}>Connecting to Antenna...</div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <input 
+                        type="text" 
+                        placeholder="Message Antenna agent..." 
+                        style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, background: "var(--surface2)", color: "var(--text)" }}
+                        value={antennaChatInput}
+                        onChange={e => setAntennaChatInput(e.target.value)}
+                        onKeyPress={e => {
+                          if (e.key === "Enter") {
+                            sendAntennaMessage(antennaChatInput);
+                            setAntennaChatInput("");
+                          }
+                        }}
+                      />
+                      <button 
+                        className="full-btn"
+                        style={{ padding: "8px 16px", fontSize: "0.875rem" }}
+                        onClick={() => {
+                          sendAntennaMessage(antennaChatInput);
+                          setAntennaChatInput("");
+                        }}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── SDR Radio tab ── */}
+            {activeLeftTab === "sdr" && (
+              <>
+                <div className="section">
+                  <SectionLabel>SDR Radio Signals</SectionLabel>
+                  <p style={{ fontSize: 11, color: "var(--text-2)", marginBottom: 12 }}>
+                    Monitor Software Defined Radio signals for conflict intelligence.
+                  </p>
+                  
+                  <div style={{ marginBottom: 12 }}>
+                    <div className="range-row">
+                      <div className="range-label"><span>Frequency</span><span>{sdrFrequency} kHz</span></div>
+                      <input 
+                        type="range" 
+                        min={100} 
+                        max={30000} 
+                        step={100} 
+                        value={sdrFrequency} 
+                        onChange={e => setSdrFrequency(+e.target.value)} 
+                      />
+                    </div>
+                    
+                    <div className="range-row">
+                      <div className="range-label"><span>Bandwidth</span><span>{sdrBandwidth} Hz</span></div>
+                      <input 
+                        type="range" 
+                        min={100} 
+                        max={10000} 
+                        step={100} 
+                        value={sdrBandwidth} 
+                        onChange={e => setSdrBandwidth(+e.target.value)} 
+                      />
+                    </div>
+                    
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      {["LSB", "USB", "AM", "FM", "CW"].map(mode => (
+                        <button 
+                          key={mode}
+                          className={cls("quality-btn", sdrMode === mode && "active")}
+                          onClick={() => setSdrMode(mode)}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section">
+                  <SectionLabel>Detected Signals</SectionLabel>
+                  <div style={{ maxHeight: 300, overflow: "auto" }}>
+                    {sdrSignals.length === 0 ? (
+                      <div style={{ color: "var(--text-3)", fontSize: 12, padding: "8px" }}>
+                        No signals detected or SDR source not configured.
+                      </div>
+                    ) : (
+                      sdrSignals.map(signal => (
+                        <div 
+                          key={signal.id}
+                          className={cls("event-item", selectedSdrSignal?.id === signal.id && "selected")}
+                          onClick={() => {
+                            setSelectedSdrSignal(signal);
+                            if (signal.lat && signal.lon) {
+                              if (globeEl.current) {
+                                (globeEl.current as any).pointOfView({ lat: signal.lat, lng: signal.lon, altitude: 0.5 }, 1500);
+                              }
+                            }
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ color: "var(--accent)" }}>◈</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 500, fontSize: 12 }}>{signal.type}</div>
+                              <div style={{ fontSize: 11, color: "var(--text-2)" }}>
+                                {signal.frequency ? `${signal.frequency} kHz` : ""} 
+                                {signal.power ? ` • ${signal.power} dBm` : ""}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {selectedSdrSignal && (
+                  <div className="section">
+                    <SectionLabel>Signal Details</SectionLabel>
+                    <div style={{ fontSize: 11, color: "var(--text-2)" }}>
+                      <div style={{ marginBottom: 4 }}><strong>Type:</strong> {selectedSdrSignal.type}</div>
+                      {selectedSdrSignal.frequency && <div style={{ marginBottom: 4 }}><strong>Frequency:</strong> {selectedSdrSignal.frequency} kHz</div>}
+                      {selectedSdrSignal.power && <div style={{ marginBottom: 4 }}><strong>Power:</strong> {selectedSdrSignal.power} dBm</div>}
+                      {selectedSdrSignal.bandwidth && <div style={{ marginBottom: 4 }}><strong>Bandwidth:</strong> {selectedSdrSignal.bandwidth} Hz</div>}
+                      {selectedSdrSignal.modulation && <div style={{ marginBottom: 4 }}><strong>Modulation:</strong> {selectedSdrSignal.modulation}</div>}
+                      {selectedSdrSignal.description && <div style={{ marginBottom: 4, marginTop: 8 }}>{selectedSdrSignal.description}</div>}
+                      <div style={{ marginTop: 8, color: "var(--text-3)" }}>
+                        {selectedSdrSignal.lat && selectedSdrSignal.lon && (
+                          <div>📍 {selectedSdrSignal.lat.toFixed(4)}, {selectedSdrSignal.lon.toFixed(4)}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
