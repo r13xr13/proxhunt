@@ -35,9 +35,27 @@ services:
     networks:
       - conflict-globe
 
+  # Discord Bot - AI-powered OSINT notifications
+  discord-bot:
+    build:
+      context: ./discord-bot
+      dockerfile: Dockerfile
+    container_name: conflict-globe-discord
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+    volumes:
+      - discord-data:/app
+    restart: unless-stopped
+    networks:
+      - conflict-globe
+
 networks:
   conflict-globe:
     driver: bridge
 
 volumes:
   antenna-data:
+  discord-data:
