@@ -324,6 +324,18 @@ export default function App() {
 
   // Time Machine
   const [showTimeMachine, setShowTimeMachine] = useState(false);
+  const [historicalDate, setHistoricalDate] = useState<Date | null>(null);
+  const [timeLapseMode, setTimeLapseMode] = useState(false);
+
+  // UI Panels
+  const [showCollaborators, setShowCollaborators] = useState(false);
+  const [showReportPanel, setShowReportPanel] = useState(false);
+  const [showLiveFeed, setShowLiveFeed] = useState(false);
+  const [showDrawTools, setShowDrawTools] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  // Hover state
+  const [hoveredEvent, setHoveredEvent] = useState<ConflictEvent | null>(null);
 
 
   // ── Data loading ──
