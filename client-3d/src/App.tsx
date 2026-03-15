@@ -337,6 +337,9 @@ export default function App() {
   // Hover state
   const [hoveredEvent, setHoveredEvent] = useState<ConflictEvent | null>(null);
 
+  // Dedicated AI Chat Panel
+  const [showAIChatPanel, setShowAIChatPanel] = useState(false);
+
 
   // ── Data loading ──
   const loadData = useCallback(async () => {
@@ -1820,6 +1823,7 @@ export default function App() {
             {([
               ["🔄", "Refresh", () => loadData(), false],
               [globeTheme === "dark" ? "◐" : "◑", "Theme", () => setGlobeTheme(t => t === "dark" ? "light" : "dark"), false],
+              ["🤖", "AI Chat", () => setShowAIChatPanel(p => !p), showAIChatPanel],
               ["⬡", "Analytics", () => setShowAnalytics(p => !p), showAnalytics],
               ["⊕", "Entities", () => setShowEntityGraph(p => !p), showEntityGraph],
               ["⏲", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
@@ -2543,6 +2547,96 @@ pointColor={(d: any) => {
                 <div className="feed-msg">{item.message}</div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated AI Chat Panel */}
+      {showAIChatPanel && (
+        <div className="float-panel" style={{ right: 20, bottom: 90, width: 380, height: 520 }}>
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.2rem" }}>🤖</span>
+              <span className="float-title" style={{ color: "#fff" }}>AI Assistant</span>
+            </div>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowAIChatPanel(false)}>✕</button>
+          </div>
+          <div className="float-body" style={{ padding: 0, display: "flex", flexDirection: "column", height: "calc(100% - 50px)" }}>
+            <div style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+              {aiChatMessages.length === 0 && (
+                <div style={{ textAlign: "center", color: "var(--text-3)", padding: "30px 20px" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>🤖</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
+                    Ask me about conflicts, signals, or any OSINT data.<br/>
+                    I can analyze patterns and provide insights.
+                  </div>
+                </div>
+              )}
+              {aiChatMessages.map((msg, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                  <div style={{ 
+                    maxWidth: "80%", 
+                    padding: "10px 14px", 
+                    borderRadius: 12,
+                    background: msg.role === "user" ? "var(--accent)" : "var(--surface2)",
+                    color: msg.role === "user" ? "#fff" : "var(--text)",
+                    fontSize: "0.82rem",
+                    lineHeight: 1.5,
+                  }}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {aiChatLoading && (
+                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                  <div style={{ 
+                    padding: "10px 14px", 
+                    borderRadius: 12,
+                    background: "var(--surface2)",
+                    color: "var(--text-3)",
+                    fontSize: "0.82rem",
+                    fontStyle: "italic",
+                  }}>
+                    Analyzing...
+                  </div>
+                </div>
+              )}
+              <div ref={(el) => { if (el) el.scrollIntoView({ behavior: "smooth" }); }} />
+            </div>
+            <div style={{ padding: 14, borderTop: "1px solid var(--border)", display: "flex", gap: 8 }}>
+              <input 
+                type="text" 
+                placeholder="Ask about conflicts, signals..." 
+                style={{ 
+                  flex: 1, 
+                  padding: "10px 14px", 
+                  border: "1px solid var(--border)", 
+                  borderRadius: 8, 
+                  background: "var(--surface2)", 
+                  color: "var(--text)",
+                  fontSize: "0.85rem",
+                }}
+                value={aiChatInput}
+                onChange={e => setAIChatInput(e.target.value)}
+                onKeyPress={e => {
+                  if (e.key === "Enter" && aiChatInput.trim()) {
+                    sendAIMessage(aiChatInput);
+                    setAIChatInput("");
+                  }
+                }}
+              />
+              <button 
+                className="full-btn full-btn-primary"
+                style={{ padding: "10px 16px", borderRadius: 8 }}
+                onClick={() => {
+                  sendAIMessage(aiChatInput);
+                  setAIChatInput("");
+                }}
+                disabled={aiChatLoading || !aiChatInput.trim()}
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
       )}
