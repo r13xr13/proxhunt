@@ -71,7 +71,7 @@ interface LayerState {
 }
 
 type GlobeTheme = "dark" | "light" | "satellite" | "terrain";
-type LeftTab = "layers" | "categories" | "filters" | "import" | "settings";
+type LeftTab = "layers" | "categories" | "filters" | "import" | "settings" | "sdr";
 type RightTab = "details" | "analytics" | "entities" | "timeline";
 type ReportType = "summary" | "detailed" | "analytics";
 type DrawMode = "none" | "circle" | "polygon" | "line";
@@ -238,48 +238,61 @@ export default function App() {
   
   // Floating panel positions (for draggable panels)
   const [aiChatPosition, setAiChatPosition] = useState({ x: 20, y: 90 });
-  const [sdrPosition, setSdrPosition] = useState({ x: 20, y: 90 });
-  const [antennaPosition, setAntennaPosition] = useState({ x: 20, y: 90 });
-  const [analyticsPosition, setAnalyticsPosition] = useState({ x: 20, y: 90 });
-  const [liveFeedPosition, setLiveFeedPosition] = useState({ x: 20, y: 90 });
+  const [sdrPosition, setSdrPosition] = useState({ x: 440, y: 90 });
+  const [antennaPosition, setAntennaPosition] = useState({ x: 860, y: 90 });
+  const [analyticsPosition, setAnalyticsPosition] = useState({ x: 20, y: 620 });
+  const [liveFeedPosition, setLiveFeedPosition] = useState({ x: 440, y: 620 });
   
   // Dragging state
   const [draggingPanel, setDraggingPanel] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [panelStartPos, setPanelStartPos] = useState({ x: 0, y: 0 });
   
   const handleDragStart = (panelId: string, e: React.MouseEvent) => {
+    e.preventDefault();
     setDraggingPanel(panelId);
-    setDragOffset({ x: e.clientX, y: e.clientY });
-  };
-  
-  const handleDragMove = (e: MouseEvent) => {
-    if (!draggingPanel) return;
-    const dx = e.clientX - dragOffset.x;
-    const dy = e.clientY - dragOffset.y;
-    setDragOffset({ x: e.clientX, y: e.clientY });
+    setDragStartPos({ x: e.clientX, y: e.clientY });
     
-    if (draggingPanel === 'aiChat') setAiChatPosition(p => ({ x: p.x + dx, y: p.y + dy }));
-    else if (draggingPanel === 'sdr') setSdrPosition(p => ({ x: p.x + dx, y: p.y + dy }));
-    else if (draggingPanel === 'antenna') setAntennaPosition(p => ({ x: p.x + dx, y: p.y + dy }));
-    else if (draggingPanel === 'analytics') setAnalyticsPosition(p => ({ x: p.x + dx, y: p.y + dy }));
-    else if (draggingPanel === 'liveFeed') setLiveFeedPosition(p => ({ x: p.x + dx, y: p.y + dy }));
+    // Get current position based on panel
+    if (panelId === 'aiChat') setPanelStartPos(aiChatPosition);
+    else if (panelId === 'sdr') setPanelStartPos(sdrPosition);
+    else if (panelId === 'antenna') setPanelStartPos(antennaPosition);
+    else if (panelId === 'analytics') setPanelStartPos(analyticsPosition);
+    else if (panelId === 'liveFeed') setPanelStartPos(liveFeedPosition);
   };
   
-  const handleDragEnd = () => {
-    setDraggingPanel(null);
-  };
-  
-  // Add global mouse event listeners for dragging
   useEffect(() => {
-    if (draggingPanel) {
-      window.addEventListener('mousemove', handleDragMove);
-      window.addEventListener('mouseup', handleDragEnd);
-      return () => {
-        window.removeEventListener('mousemove', handleDragMove);
-        window.removeEventListener('mouseup', handleDragEnd);
-      };
-    }
-  }, [draggingPanel]);
+    if (!draggingPanel) return;
+    
+    const handleDragMove = (e: MouseEvent) => {
+      const dx = e.clientX - dragStartPos.x;
+      const dy = e.clientY - dragStartPos.y;
+      const newX = panelStartPos.x + dx;
+      const newY = panelStartPos.y + dy;
+      
+      // Boundary checks
+      const boundedX = Math.max(0, Math.min(window.innerWidth - 400, newX));
+      const boundedY = Math.max(50, Math.min(window.innerHeight - 600, newY));
+      
+      if (draggingPanel === 'aiChat') setAiChatPosition({ x: boundedX, y: boundedY });
+      else if (draggingPanel === 'sdr') setSdrPosition({ x: boundedX, y: boundedY });
+      else if (draggingPanel === 'antenna') setAntennaPosition({ x: boundedX, y: boundedY });
+      else if (draggingPanel === 'analytics') setAnalyticsPosition({ x: boundedX, y: boundedY });
+      else if (draggingPanel === 'liveFeed') setLiveFeedPosition({ x: boundedX, y: boundedY });
+    };
+    
+    const handleDragEnd = () => {
+      setDraggingPanel(null);
+    };
+    
+    window.addEventListener('mousemove', handleDragMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleDragMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+    };
+  }, [draggingPanel, dragStartPos, panelStartPos]);
   
   // AI Chat state
   const [aiChatInput, setAIChatInput] = useState("");
@@ -297,6 +310,7 @@ export default function App() {
   const [sdrFrequency, setSdrFrequency] = useState(11000);
   const [sdrMode, setSdrMode] = useState("USB");
   const [sdrBandwidth, setSdrBandwidth] = useState(2400);
+  const [drawMode, setDrawMode] = useState<"none" | "circle" | "polygon" | "line">("none");
 
   // Live feed
   const [liveFeedItems, setLiveFeedItems] = useState<{ id: string; time: Date; message: string; type: string; severity: string }[]>([]);
@@ -361,7 +375,7 @@ export default function App() {
 
   // Time Machine
   const [showTimeMachine, setShowTimeMachine] = useState(false);
-  const [historicalDate, setHistoricalDate] = useState<Date | null>(null);
+  const [historicalDate, setHistoricalDate] = useState<Date>(new Date());
   const [timeLapseMode, setTimeLapseMode] = useState(false);
 
   // UI Panels
@@ -1206,44 +1220,82 @@ export default function App() {
               </>
             )}
 
-            {/* ── Filters tab ── */}
-            {activeLeftTab === "filters" && (
-              <>
-                <div className="section">
-                  <SectionLabel>Boolean Mode</SectionLabel>
-                  <div className="bool-group">
-                    {(["AND", "OR"] as const).map(op => (
-                      <button key={op} className={cls("bool-btn", booleanFilter === op && "active")} onClick={() => setBooleanFilter(op)}>{op}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="section">
-                  <SectionLabel>Custom Filter (JS Expression)</SectionLabel>
-                  <textarea
-                    className="text-input"
-                    style={{ height: 90, marginBottom: 0 }}
-                    value={customFilter}
-                    onChange={e => setCustomFilter(e.target.value)}
-                    placeholder={"e.g., severity === 'critical' && category === 'conflict'"}
-                  />
-                </div>
-
-                <div className="section">
-                  <SectionLabel>Time Range</SectionLabel>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div>
-                      <div className="range-label" style={{ marginBottom: 4 }}><span>From</span></div>
-                      <input type="date" className="text-input" value={timeRange[0].toISOString().split("T")[0]} onChange={e => setTimeRange([new Date(e.target.value), timeRange[1]])} />
-                    </div>
-                    <div>
-                      <div className="range-label" style={{ marginBottom: 4 }}><span>To</span></div>
-                      <input type="date" className="text-input" value={timeRange[1].toISOString().split("T")[0]} onChange={e => setTimeRange([timeRange[0], new Date(e.target.value)])} />
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+             {/* ── Filters tab ── */}
+             {activeLeftTab === "filters" && (
+               <>
+                 <div className="section">
+                   <SectionLabel>Filters</SectionLabel>
+                   <div className="filter-group">
+                     <div className="filter-row">
+                       <span>Show Labels</span>
+                       <CheckRow checked={layers.showLabels} onChange={v => setLayer("showLabels", v)} icon="T" />
+                     </div>
+                     <div className="filter-row">
+                       <span>Show Connections</span>
+                       <CheckRow checked={layers.showConnections} onChange={v => setLayer("showConnections", v)} icon="↔" />
+                     </div>
+                     <div className="filter-row">
+                       <span>Show Heatmap</span>
+                       <CheckRow checked={layers.showHeatmap} onChange={v => setLayer("showHeatmap", v)} icon="≡" />
+                     </div>
+                   </div>
+                 </div>
+                 
+                 <div className="section">
+                   <SectionLabel>Severity Filters</SectionLabel>
+                   <div className="filter-grid">
+                     {(["low", "medium", "high", "critical"] as const).map(sev => (
+                       <CheckboxLabel key={sev}>
+                         <input
+                           type="checkbox"
+                           checked={severityFilters[sev] || false}
+                           onChange={e => setSeverityFilters(prev => ({ ...prev, [sev]: e.target.checked }))}
+                         />
+                         {sev.toUpperCase()}
+                       </CheckboxLabel>
+                     ))}
+                   </div>
+                 </div>
+                 
+                 <div className="section">
+                   <SectionLabel>Category Filters</SectionLabel>
+                   <div className="filter-grid">
+                     {Object.keys(CATEGORY_COLORS).map(cat => (
+                       <CheckboxLabel key={cat}>
+                         <input
+                           type="checkbox"
+                           checked={filters[cat] || false}
+                           onChange={e => setFilters(prev => ({ ...prev, [cat]: e.target.checked }))}
+                         />
+                         {cat.toUpperCase()}
+                       </CheckboxLabel>
+                     ))}
+                   </div>
+                 </div>
+                 
+                 <div className="section">
+                   <SectionLabel>Custom Filter</SectionLabel>
+                   <input
+                     type="text"
+                     placeholder="Enter custom filter (e.g., type:conflict AND severity:high)"
+                     value={customFilter}
+                     onChange={e => setCustomFilter(e.target.value)}
+                     className="text-input"
+                   />
+                 </div>
+                 
+                 <div className="section">
+                   <SectionLabel>Boolean Logic</SectionLabel>
+                   <div className="filter-row">
+                     <span>Combine with:</span>
+                     <select value={booleanFilter} onChange={e => setBooleanFilter(e.target.value as "AND" | "OR")} className="text-input">
+                       <option value="AND">AND</option>
+                       <option value="OR">OR</option>
+                     </select>
+                   </div>
+                 </div>
+               </>
+             )}
 
             {/* ── Import tab ── */}
             {activeLeftTab === "import" && (
@@ -1511,122 +1563,9 @@ export default function App() {
                           <li key={k} style={{ marginBottom: 4 }}>• {k}</li>
                         ))}
                       </ul>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* ── AI Chat tab ── */}
-            {activeLeftTab === "aiChat" && (
-              <>
-                <div className="section">
-                  <SectionLabel>AI Assistant</SectionLabel>
-                  <p style={{ fontSize: 11, color: "var(--text-2)", marginBottom: 12 }}>
-                    Chat with your AI assistant for conflict analysis and OSINT queries.
-                  </p>
-                  
-                  <div id="ai-chat-container" style={{ height: 300, overflow: "auto", padding: "10px", background: "var(--surface)", borderRadius: 6, marginBottom: 10 }}>
-                    <div id="ai-chat-messages" style={{ minHeight: 200 }}>
-                      {aiChatMessages.map((msg, i) => (
-                        <div key={i} style={{ marginBottom: 8, textAlign: msg.role === "user" ? "right" : "left" }}>
-                          <span style={{ 
-                            display: "inline-block", 
-                            padding: "8px 12px", 
-                            background: msg.role === "user" ? "var(--accent)" : "var(--surface2)", 
-                            borderRadius: 8,
-                            color: msg.role === "user" ? "#fff" : "var(--text)",
-                            maxWidth: "80%"
-                          }}>
-                            {msg.content}
-                          </span>
-                        </div>
-                      ))}
-                      {aiChatLoading && (
-                        <div style={{ textAlign: "center", color: "var(--text-3)" }}>Thinking...</div>
                       )}
-                    </div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <input 
-                        type="text" 
-                        placeholder="Ask about conflicts, signals, or anything..." 
-                        style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, background: "var(--surface2)", color: "var(--text)" }}
-                        value={aiChatInput}
-                        onChange={e => setAIChatInput(e.target.value)}
-                        onKeyPress={e => {
-                          if (e.key === "Enter") {
-                            sendAIMessage(aiChatInput);
-                            setAIChatInput("");
-                          }
-                        }}
-                      />
-                      <button 
-                        className="full-btn"
-                        style={{ padding: "8px 16px", fontSize: "0.875rem" }}
-                        onClick={() => {
-                          sendAIMessage(aiChatInput);
-                          setAIChatInput("");
-                        }}
-                      >
-                        Send
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="section">
-                  <SectionLabel>Antenna Agent</SectionLabel>
-                  <p style={{ fontSize: 11, color: "var(--text-2)", marginBottom: 12 }}>
-                    Chat with the Antenna AI Agent framework. Connects to gateway on port 18790.
-                  </p>
-                  
-                  <div id="antenna-chat-container" style={{ height: 250, overflow: "auto", padding: "10px", background: "var(--surface)", borderRadius: 6, marginBottom: 10 }}>
-                    <div id="antenna-chat-messages" style={{ minHeight: 150 }}>
-                      {antennaChatMessages.map((msg, i) => (
-                        <div key={i} style={{ marginBottom: 8, textAlign: msg.role === "user" ? "right" : "left" }}>
-                          <span style={{ 
-                            display: "inline-block", 
-                            padding: "8px 12px", 
-                            background: msg.role === "user" ? "var(--accent)" : "var(--surface2)", 
-                            borderRadius: 8,
-                            color: msg.role === "user" ? "#fff" : "var(--text)",
-                            maxWidth: "80%"
-                          }}>
-                            {msg.content}
-                          </span>
-                        </div>
-                      ))}
-                      {antennaChatLoading && (
-                        <div style={{ textAlign: "center", color: "var(--text-3)" }}>Connecting to Antenna...</div>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <input 
-                        type="text" 
-                        placeholder="Message Antenna agent..." 
-                        style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, background: "var(--surface2)", color: "var(--text)" }}
-                        value={antennaChatInput}
-                        onChange={e => setAntennaChatInput(e.target.value)}
-                        onKeyPress={e => {
-                          if (e.key === "Enter") {
-                            sendAntennaMessage(antennaChatInput);
-                            setAntennaChatInput("");
-                          }
-                        }}
-                      />
-                      <button 
-                        className="full-btn"
-                        style={{ padding: "8px 16px", fontSize: "0.875rem" }}
-                        onClick={() => {
-                          sendAntennaMessage(antennaChatInput);
-                          setAntennaChatInput("");
-                        }}
-                      >
-                        Send
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                   </div>
+                 </div>
               </>
             )}
 
@@ -1894,6 +1833,7 @@ export default function App() {
         <div className="globe-canvas" style={{ flex: 1, position: "relative" }}>
           {(() => {
             const G = Globe as any;
+            const overlayEvents = validEvents.filter((e: any) => ["air","maritime","space","cameras"].includes(e.category));
             return (
               <G
                 ref={globeEl}
@@ -1902,39 +1842,107 @@ export default function App() {
                 backgroundColor={bgColor}
                 showAtmosphere={showAtmosphere}
                 showGraticules={showGraticules}
-                htmlElementsData={validEvents.filter((e: any) => ["air","maritime","space","cameras"].includes(e.category)).slice(0, 250)}
+                 objectsData={overlayEvents}
+                 objectLat={(d: any) => d.lat}
+                 objectLng={(d: any) => d.lon}
+                 objectAltitude={0.02}
+                 objectThreeObject={(d: any) => {
+                   const cat = d.category;
+                   const THREE = (window as any).THREE;
+                   let mesh;
+                   
+                   if (cat === "air") {
+                     // Airplane - cone pointing up with wings
+                     const bodyGeo = new THREE.ConeGeometry(0.15, 0.4, 8);
+                     const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+                     const body = new THREE.Mesh(bodyGeo, bodyMat);
+                     body.rotation.x = Math.PI;
+                     
+                     // Wings
+                     const wingGeo = new THREE.BoxGeometry(0.6, 0.02, 0.15);
+                     const wingMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+                     const wings = new THREE.Mesh(wingGeo, wingMat);
+                     wings.position.y = -0.05;
+                     
+                     // Tail
+                     const tailGeo = new THREE.BoxGeometry(0.2, 0.02, 0.08);
+                     const tail = new THREE.Mesh(tailGeo, wingMat);
+                     tail.position.y = -0.15;
+                     tail.position.z = 0.05;
+                     
+                     mesh = new THREE.Group();
+                     mesh.add(body);
+                     mesh.add(wings);
+                     mesh.add(tail);
+                     mesh.rotation.x = Math.PI / 2;
+                     
+                   } else if (cat === "maritime") {
+                     // Ship - elongated box with deck
+                     const hullGeo = new THREE.BoxGeometry(0.5, 0.1, 0.15);
+                     const hullMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
+                     const hull = new THREE.Mesh(hullGeo, hullMat);
+                     
+                     const deckGeo = new THREE.BoxGeometry(0.35, 0.08, 0.1);
+                     const deckMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
+                     const deck = new THREE.Mesh(deckGeo, deckMat);
+                     deck.position.y = 0.08;
+                     
+                     mesh = new THREE.Group();
+                     mesh.add(hull);
+                     mesh.add(deck);
+                     
+                   } else if (cat === "space") {
+                     // Satellite - octahedron with panels
+                     const bodyGeo = new THREE.OctahedronGeometry(0.12, 0);
+                     const bodyMat = new THREE.MeshBasicMaterial({ color: 0x14b8a6 });
+                     const body = new THREE.Mesh(bodyGeo, bodyMat);
+                     
+                     // Solar panels
+                     const panelGeo = new THREE.BoxGeometry(0.4, 0.01, 0.15);
+                     const panelMat = new THREE.MeshBasicMaterial({ color: 0x0d9488 });
+                     const panels = new THREE.Mesh(panelGeo, panelMat);
+                     
+                     mesh = new THREE.Group();
+                     mesh.add(body);
+                     mesh.add(panels);
+                     mesh.rotation.z = Math.PI / 4;
+                     
+                   } else {
+                     // Default - icosahedron
+                     const geo = new THREE.IcosahedronGeometry(0.15, 0);
+                     const mat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+                     mesh = new THREE.Mesh(geo, mat);
+                   }
+                   
+                   return mesh;
+                 }}
+                 htmlElementsData={overlayEvents}
                 htmlLat={(d: any) => d.lat}
                 htmlLng={(d: any) => d.lon}
-                htmlAltitude={0.01}
+                htmlAltitude={0.015}
                 htmlElement={(d: any) => {
                   const el = document.createElement("div");
-                  const sev = (d as any).severity;
-                  const cat = (d as any).category;
-                  const icon = cat === "air" ? "A" : cat === "maritime" ? "M" : cat === "space" ? "S" : cat === "cameras" ? "O" : "P";
-                  const color = cat === "air" ? "#22c55e" : cat === "maritime" ? "#3b82f6" : cat === "space" ? "#14b8a6" : cat === "cameras" ? "#06b6d4" : "#ffd700";
-                  const size = sev === "critical" ? 14 : sev === "high" ? 12 : 10;
-                  el.innerHTML = icon;
-                  el.style.cssText = `
-                    color: ${color};
-                    font-size: ${size}px;
-                    cursor: pointer;
-                    user-select: none;
-                    filter: drop-shadow(0 0 3px ${color});
-                    transition: transform 0.2s;
-                    line-height: 1;
-                  `;
-                  el.title = (d as any).type || "";
-                  el.addEventListener("mouseenter", () => { el.style.transform = "scale(1.8)"; el.style.zIndex = "999"; });
-                  el.addEventListener("mouseleave", () => { el.style.transform = "scale(1)"; el.style.zIndex = ""; });
-                  el.addEventListener("click", () => {
-                    if ((d as any).category === "cameras" && (d as any).streamUrl) {
-                      const event = new CustomEvent("globe-camera-click", { detail: d, bubbles: true });
-                      el.dispatchEvent(event);
-                    } else {
-                      const event = new CustomEvent("globe-point-click", { detail: d, bubbles: true });
-                      el.dispatchEvent(event);
-                    }
-                  });
+                  const cat = d.category;
+                  // Use geometric symbols instead of emojis
+                  const icon = cat === "air" ? "▲" : cat === "maritime" ? "▬" : cat === "space" ? "◇" : "●";
+                  const color = cat === "air" ? "#22c55e" : cat === "maritime" ? "#3b82f6" : cat === "space" ? "#14b8a6" : "#06b6d4";
+                  const size = 14;
+                  el.innerHTML = `<div style="
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: ${color};
+                    border-radius: ${cat === "air" ? "2px" : cat === "maritime" ? "1px" : "50%"};
+                    border: 2px solid white;
+                    box-shadow: 0 0 8px ${color}, 0 0 16px ${color}66;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 8px;
+                    font-weight: bold;
+                    color: white;
+                  ">${icon}</div>`;
+                  el.style.pointerEvents = "auto";
+                  el.style.cursor = "pointer";
                   return el;
                 }}
                 pointsData={validEvents}
@@ -2547,9 +2555,9 @@ pointColor={(d: any) => {
               </div>
               <SectionLabel>Active Users ({collaborators.length + 1})</SectionLabel>
               <div className="collab-user" style={{ color: "var(--accent)" }}>• {username} (you)</div>
-              {collaborators.map(c => (
-                <div key={c.id} className="collab-user" style={{ color: c.color }}>• {c.name}</div>
-              ))}
+               {collaborators.map(c => (
+                 <div key={c.id} className="collab-user" style={{ color: c.color }}>• {c.username}</div>
+               ))}
               <div style={{ marginTop: 16 }}>
                 <button className="full-btn full-btn-red" onClick={leaveCollaboration}>Leave Room</button>
               </div>
