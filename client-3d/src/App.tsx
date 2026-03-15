@@ -96,18 +96,18 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 const GLOBE_IMAGES = {
-  dark: "//unpkg.com/three-globe/example/img/earth-dark.jpg",
-  light: "//unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
-  satellite: "//unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
-  terrain: "//unpkg.com/three-globe/example/img/earth-topology.png",
+  dark: "https://unpkg.com/three-globe/example/img/earth-dark.jpg",
+  light: "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
+  satellite: "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg",
+  terrain: "https://unpkg.com/three-globe/example/img/earth-topology.png",
 };
 
 const TILE_LAYERS = {
-  cartodb_dark: { name: "Dark", url: "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png", attribution: "© CartoDB" },
-  cartodb_light: { name: "Light", url: "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png", attribution: "© CartoDB" },
-  esri_satellite: { name: "Satellite", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attribution: "© Esri" },
-  osm: { name: "OSM", url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: "© OpenStreetMap" },
-  stamen_toner: { name: "Toner", url: "https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png", attribution: "© Stadia Maps" },
+  cartodb_dark: { name: "Dark", url: "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png", attribution: "CartoDB" },
+  cartodb_light: { name: "Light", url: "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png", attribution: "CartoDB" },
+  esri_satellite: { name: "Satellite", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attribution: "Esri" },
+  osm: { name: "OSM", url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attribution: "OpenStreetMap" },
+  stamen_toner: { name: "Toner", url: "https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}.png", attribution: "Stadia Maps" },
 };
 
 const QUICK_LOCATIONS = [
@@ -125,7 +125,7 @@ const QUICK_LOCATIONS = [
   { name: "Israel", lat: 31.7683, lon: 35.2137 },
 ];
 
-const NIGHT_SKY = "//unpkg.com/three-globe/example/img/night-sky.png";
+const NIGHT_SKY = "https://unpkg.com/three-globe/example/img/night-sky.png";
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
