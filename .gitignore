@@ -17,3 +17,6 @@ server/node_modules/
 globe.gl/node_modules/
 client/node_modules/
 client-3d/node_modules/
+antenna-agent/build/
+antenna-agent/workspace/
+antenna-agent/*.log

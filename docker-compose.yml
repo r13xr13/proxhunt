@@ -8,10 +8,30 @@ services:
       - .env
     environment:
       - REACT_APP_CESIUM_ION_TOKEN=${CESIUM_ION_TOKEN:-}
-      # Antenna Agent Gateway URL (optional - for AI agent integration)
-      # Set ANTENNA_GATEWAY_URL in .env to connect to external Antenna agent
-      # Example: ANTENNA_GATEWAY_URL=http://host.docker.internal:18790
-      - ANTENNA_GATEWAY_URL=${ANTENNA_GATEWAY_URL:-}
+      # Antenna Agent Gateway URL - points to antenna-agent service
+      - ANTENNA_GATEWAY_URL=http://antenna-agent:18790
+    restart: unless-stopped
+    depends_on:
+      - antenna-agent
+    networks:
+      - conflict-globe
+
+  # Antenna Agent - AI Agent Framework
+  antenna-agent:
+    build:
+      context: ./antenna-agent
+      dockerfile: Dockerfile
+    container_name: antenna-agent
+    ports:
+      - "18790:18790"
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o}
+    volumes:
+      - antenna-data:/root/.antenna
     restart: unless-stopped
     networks:
       - conflict-globe
@@ -19,3 +39,6 @@ services:
 networks:
   conflict-globe:
     driver: bridge
+
+volumes:
+  antenna-data:
