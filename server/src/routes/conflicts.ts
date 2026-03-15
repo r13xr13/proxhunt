@@ -21,7 +21,7 @@ import { fetchFlightData, fetchMilitaryFlights, fetchAirspaceAlerts, fetchDroneZ
 import { fetchCityBuildings, fetchCityDensityPoints, fetchUrbanExtents } from "../services/city";
 import { fetchWikidataConflicts, fetchWikidataLocations } from "../services/wikidata";
 import { fetchAntennaSignals, fetchAntennaStatus } from "../services/antenna";
-import { chatWithOllama } from "../services/aiChatService";
+import { chatWithAI, chatWithOllama } from "../services/aiChatService";
 
 const router = Router();
 
@@ -236,12 +236,27 @@ router.post("/ai/chat", async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
     
-    const response = await chatWithOllama(message, history || []);
+    const response = await chatWithAI(message, history || []);
     res.json({ response });
   } catch (error) {
     console.error("AI chat error:", error);
     res.status(500).json({ error: "Failed to process AI chat request" });
   }
+});
+
+// Get AI provider info endpoint
+router.get("/ai/provider", async (req, res) => {
+  let provider = "none";
+  if (process.env.OPENROUTER_API_KEY) {
+    provider = "openrouter";
+  } else if (process.env.OLLAMA_BASE_URL) {
+    provider = "ollama";
+  }
+  
+  res.json({ 
+    provider,
+    model: process.env.OPENROUTER_MODEL || process.env.OLLAMA_MODEL || "not configured"
+  });
 });
 
 export default router;

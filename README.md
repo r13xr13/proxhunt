@@ -217,38 +217,52 @@ PORT=8080
 NODE_ENV=production
 ```
 
-**AI / Ollama Configuration (External):**
+**AI Configuration:**
+Choose ONE AI provider - OpenRouter (cloud) or Ollama (self-hosted).
+
+**Option 1: OpenRouter (Recommended for Production)**
 ```env
-# Point to your external Ollama instance
+OPENROUTER_API_KEY=your-openrouter-api-key
+OPENROUTER_MODEL=openai/gpt-4o
+```
+Get API key from https://openrouter.ai/keys
+
+**Option 2: Ollama (Self-Hosted)**
+```env
 OLLAMA_BASE_URL=http://host.docker.internal:11434  # For local machine access
 # OR
 OLLAMA_BASE_URL=https://your-ollama-server.com      # For remote server
 OLLAMA_MODEL=llama3.2:latest
 ```
 
-**Note:** The Docker container no longer includes Ollama. You need to run Ollama separately and configure `OLLAMA_BASE_URL` to point to it.
+**Setting up AI Providers:**
 
-**Setting up Ollama for Remote Access:**
+*OpenRouter (Easiest for Production)*
+1. Sign up at https://openrouter.ai
+2. Get an API key from the dashboard
+3. Set `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` in Railway
+4. No server setup needed - works instantly
 
-*Option 1: Local Machine with Tunnel (Development)*
-1. Install Ollama on your local machine
-2. Expose Ollama via a tunnel service (e.g., Cloudflare Tunnel, ngrok):
-   ```bash
-   ngrok http 11434
-   ```
-3. Set `OLLAMA_BASE_URL` to the ngrok URL in Railway dashboard
+*Ollama (Self-Hosted)*
+1. Local Machine with Tunnel (Development)
+   - Install Ollama on your local machine
+   - Expose via tunnel (Cloudflare Tunnel, ngrok):
+     ```bash
+     ngrok http 11434
+     ```
+   - Set `OLLAMA_BASE_URL` to the ngrok URL
 
-*Option 2: Remote VPS/Server*
-1. Install Ollama on a remote server/VPS
-2. Configure Ollama to listen on all interfaces:
-   ```bash
-   OLLAMA_HOST=0.0.0.0 ollama serve
-   ```
-3. Set `OLLAMA_BASE_URL` to your server's IP/domain in Railway dashboard
-4. Ensure firewall allows port 11434
+2. Remote VPS/Server
+   - Install Ollama on a remote server/VPS
+   - Configure to listen on all interfaces:
+     ```bash
+     OLLAMA_HOST=0.0.0.0 ollama serve
+     ```
+   - Set `OLLAMA_BASE_URL` to your server's IP/domain
+   - Ensure firewall allows port 11434
 
-*Option 3: Railway Ollama Service (Recommended for production)*
-Deploy Ollama as a separate Railway service with GPU support.
+3. Railway Ollama Service
+   - Deploy Ollama as a separate Railway service with GPU support
 
 ### Self-Hosted
 
