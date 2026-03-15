@@ -18,21 +18,31 @@ const client = new Client({
     ]
 });
 
-const TOKEN = process.env.DISCORD_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const CONFLICT_GLOBE_API = process.env.CONFLICT_GLOBE_API || 'http://localhost:8080/api/conflicts';
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
 const GITHUB_REPO = process.env.GITHUB_REPO || 'r13xr13/conflict-globe.gl';
-const DEPLOY_CHANNEL_ID = process.env.DEPLOY_CHANNEL_ID || process.env.DEV_CHANNEL_ID || '1480238458177064960';
+const DEPLOY_CHANNEL_ID = process.env.DEPLOY_CHANNEL_ID || process.env.DEV_CHANNEL_ID;
 
-// Channel configurations (from environment variables or defaults)
+// Channel configurations (from environment variables only - no defaults)
 const CHANNELS = {
-    liveUpdates: process.env.LIVE_UPDATES_CHANNEL_ID || '1482135927043391650',
-    threatAlerts: process.env.THREAT_ALERTS_CHANNEL_ID || '1480287712366952509',
-    general: process.env.GENERAL_CHANNEL_ID || '1480010187107733545',
-    dev: process.env.DEV_CHANNEL_ID || '1480238458177064960',
+    liveUpdates: process.env.LIVE_UPDATES_CHANNEL_ID,
+    threatAlerts: process.env.THREAT_ALERTS_CHANNEL_ID,
+    general: process.env.GENERAL_CHANNEL_ID,
+    dev: process.env.DEV_CHANNEL_ID,
     deploy: DEPLOY_CHANNEL_ID
 };
+
+// Check if token and channels are set before starting bot
+if (!TOKEN || TOKEN === 'YOUR_DISCORD_BOT_TOKEN_HERE') {
+    console.log('⚠️ DISCORD_BOT_TOKEN not set. Discord bot will not start.');
+    console.log('Please set your bot token in .env file');
+}
+
+if (!CHANNELS.liveUpdates || !CHANNELS.threatAlerts || !CHANNELS.general) {
+    console.log('⚠️ Channel IDs not fully configured. Alerts may not send properly.');
+}
 
 // Initialize AI agent
 const aiAgent = new ConflictGlobeAI();

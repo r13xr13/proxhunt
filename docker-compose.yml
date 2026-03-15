@@ -1,5 +1,5 @@
 services:
-  # Conflict Globe Web Application
+  # Conflict Globe Web Application (Always On)
   web:
     build: .
     container_name: conflict-globe-web
@@ -21,30 +21,7 @@ services:
     networks:
       - conflict-globe
 
-  # Antenna Agent - AI OSINT Agent
-  antenna:
-    image: r13xr/antenna:latest
-    container_name: antenna-agent
-    ports:
-      - "18790:18790"
-      - "3000:3000"
-    env_file:
-      - .env
-    environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://host.docker.internal:8080/api/conflicts}
-      - PORTAINER_URL=http://host.docker.internal:9000
-    volumes:
-      - antenna-data:/app
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: unless-stopped
-    networks:
-      - conflict-globe
-    depends_on:
-      - web
-
-  # Discord Bot - AI-powered OSINT notifications
+  # Discord Bot - On-Demand (starts when needed)
   discord-bot:
     build:
       context: ./discord-bot
@@ -60,13 +37,13 @@ services:
       - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://host.docker.internal:8080/api/conflicts}
     volumes:
       - discord-data:/app
-    restart: unless-stopped
+    restart: on-failure:3
     networks:
       - conflict-globe
-    depends_on:
-      - web
+    profiles:
+      - discord
 
-  # Ollama - Local AI Models
+  # Ollama - Local AI Models (Spins up on demand)
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -76,11 +53,13 @@ services:
       - ollama-data:/root/.ollama
     environment:
       - OLLAMA_MODELS=/root/.ollama/models
-    restart: unless-stopped
+    restart: on-failure:3
     networks:
       - conflict-globe
+    profiles:
+      - ai
 
-  # Sigil7 - Kali Linux with Pentest Tools
+  # Sigil7 - Pentest Tools (Spins up on demand)
   sigil7:
     image: sigil7:latest
     container_name: sigil7
@@ -94,12 +73,12 @@ services:
     networks:
       conflict-globe:
         ipv4_address: 172.18.0.10
-    restart: unless-stopped
+    restart: on-failure:3
     privileged: true
-    depends_on:
-      - ollama
+    profiles:
+      - pentest
 
-  # Portainer - Container Management
+  # Portainer - Container Management (Always On - Admin)
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
@@ -115,7 +94,7 @@ services:
     networks:
       - conflict-globe
 
-  # MemOS - Self-hosted notes
+  # MemOS - Notes (Always On)
   memos:
     image: neosmemo/memos:stable
     container_name: memos
@@ -127,7 +106,7 @@ services:
     networks:
       - conflict-globe
 
-  # SearXNG - Meta search engine
+  # SearXNG - Search Engine (Always On)
   searxng:
     image: searxng/searxng:latest
     container_name: searxng
