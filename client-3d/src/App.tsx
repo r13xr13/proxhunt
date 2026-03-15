@@ -208,6 +208,7 @@ export default function App() {
   const [layers, setLayers] = useState<LayerState>({
     showArcs: false, showHeatmap: false, showHexBin: false,
     showRings: false, showPolygons: false, showPaths: false,
+    showCityBuildings: false, showCityDensity: false, showUrbanExtents: false, showSDR: false,
   });
   const setLayer = (key: keyof LayerState, val: boolean) => setLayers(l => ({ ...l, [key]: val }));
 
@@ -308,6 +309,15 @@ export default function App() {
 
   // Handle enter key for search
   const [handleEnter, setHandleEnter] = useState<() => void>(() => () => {});
+
+  // Report
+  const [reportType, setReportType] = useState<ReportType>("summary");
+
+  // API Keys
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+
+  // Analytics
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
 
   // ── Data loading ──
