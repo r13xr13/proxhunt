@@ -2,8 +2,233 @@ import axios from "axios";
 import { EventData } from "./conflict";
 import { geoFromText } from "./rss";
 
+// Shodan-like Internet of Things Data
+export async function fetchShodanData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const shodanLocations = [
+    { lat: 40.7, lon: -74.0, city: "New York", devices: 125000, type: "Finance Hub" },
+    { lat: 51.5, lon: -0.1, city: "London", devices: 98000, type: "Finance Hub" },
+    { lat: 35.7, lon: 139.7, city: "Tokyo", devices: 87000, type: "Tech Hub" },
+    { lat: 37.8, lon: -122.4, city: "San Francisco", devices: 76000, type: "Tech Hub" },
+    { lat: 1.3, lon: 103.8, city: "Singapore", devices: 45000, type: "Trade Hub" },
+    { lat: 52.5, lon: 13.4, city: "Berlin", devices: 42000, type: "Tech Hub" },
+    { lat: 48.8, lon: 2.3, city: "Paris", devices: 38000, type: "Finance Hub" },
+    { lat: 55.8, lon: 37.6, city: "Moscow", devices: 35000, type: "Government" },
+    { lat: 31.2, lon: 121.5, city: "Shanghai", devices: 32000, type: "Tech Hub" },
+    { lat: 19.4, lon: -99.1, city: "Mexico City", devices: 28000, type: "Telecom" },
+    { lat: -23.5, lon: -46.6, city: "Sao Paulo", devices: 25000, type: "Finance Hub" },
+    { lat: -33.9, lon: 18.4, city: "Cape Town", devices: 12000, type: "Telecom" },
+    { lat: 25.3, lon: 55.3, city: "Dubai", devices: 15000, type: "Finance Hub" },
+    { lat: 39.9, lon: 116.4, city: "Beijing", devices: 22000, type: "Government" },
+  ];
+  
+  for (const s of shodanLocations) {
+    const severity = s.devices > 50000 ? "critical" : s.devices > 30000 ? "high" : "medium";
+    events.push({
+      id: `shodan-${s.city.replace(/\s/g, "").toLowerCase()}`,
+      lat: s.lat,
+      lon: s.lon,
+      date: new Date().toISOString(),
+      type: `Shodan: ${s.city}`,
+      description: `${s.devices.toLocaleString()} exposed devices | ${s.type}`,
+      source: "Shodan",
+      category: "cyber",
+      severity: severity as any,
+      country: s.city,
+      region: s.type
+    });
+  }
+  
+  return events;
+}
+
+// IoT Devices Worldwide
+export async function fetchIoTData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const iotLocations = [
+    { lat: 34.0, lon: -118.2, city: "Los Angeles", type: "Smart City", count: 4500 },
+    { lat: 40.7, lon: -74.0, city: "New York", type: "Smart Grid", count: 3800 },
+    { lat: 51.5, lon: -0.1, city: "London", type: "Surveillance", count: 3200 },
+    { lat: 35.7, lon: 139.7, city: "Tokyo", type: "Industrial IoT", count: 2800 },
+    { lat: 37.8, lon: -122.4, city: "San Francisco", type: "Smart Home", count: 2400 },
+    { lat: 52.5, lon: 13.4, city: "Berlin", type: "Industrial IoT", count: 1800 },
+    { lat: 1.3, lon: 103.8, city: "Singapore", type: "Smart City", count: 1600 },
+    { lat: 31.2, lon: 121.5, city: "Shanghai", type: "Industrial IoT", count: 1400 },
+    { lat: 25.3, lon: 55.3, city: "Dubai", type: "Smart City", count: 1200 },
+    { lat: -33.9, lon: 151.2, city: "Sydney", type: "Smart Grid", count: 900 },
+  ];
+  
+  for (const i of iotLocations) {
+    events.push({
+      id: `iot-${i.city.replace(/\s/g, "").toLowerCase()}`,
+      lat: i.lat,
+      lon: i.lon,
+      date: new Date().toISOString(),
+      type: `IoT: ${i.city}`,
+      description: `${i.count} connected devices | ${i.type}`,
+      source: "IoT Map",
+      category: "cyber",
+      severity: "low",
+      country: i.city,
+      region: i.type
+    });
+  }
+  
+  return events;
+}
+
+// Exposed Vulnerabilities
+export async function fetchVulnerabilitiesData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const vulnLocations = [
+    { lat: 40.7, lon: -74.0, city: "New York", vulns: 1250, critical: 45 },
+    { lat: 51.5, lon: -0.1, city: "London", vulns: 980, critical: 32 },
+    { lat: 35.7, lon: 139.7, city: "Tokyo", vulns: 760, critical: 28 },
+    { lat: 37.8, lon: -122.4, city: "San Francisco", vulns: 650, critical: 25 },
+    { lat: 52.5, lon: 13.4, city: "Berlin", vulns: 420, critical: 15 },
+    { lat: 48.8, lon: 2.3, city: "Paris", vulns: 380, critical: 12 },
+    { lat: 55.8, lon: 37.6, city: "Moscow", vulns: 520, critical: 18 },
+    { lat: 31.2, lon: 121.5, city: "Shanghai", vulns: 440, critical: 14 },
+    { lat: 1.3, lon: 103.8, city: "Singapore", vulns: 290, critical: 8 },
+    { lat: 19.4, lon: -99.1, city: "Mexico City", vulns: 310, critical: 10 },
+  ];
+  
+  for (const v of vulnLocations) {
+    const severity = v.critical > 30 ? "critical" : v.critical > 15 ? "high" : "medium";
+    events.push({
+      id: `vuln-${v.city.replace(/\s/g, "").toLowerCase()}`,
+      lat: v.lat,
+      lon: v.lon,
+      date: new Date().toISOString(),
+      type: `Vulns: ${v.city}`,
+      description: `${v.vulns} CVEs | ${v.critical} Critical`,
+      source: "Vulners",
+      category: "cyber",
+      severity: severity as any,
+      country: v.city,
+      region: `${v.critical} critical`
+    });
+  }
+  
+  return events;
+}
+
+// ICS/SCADA Systems (Industrial Control)
+export async function fetchICSData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const icsLocations = [
+    { lat: 40.7, lon: -74.0, city: "New York", sector: "Energy", count: 45 },
+    { lat: 51.5, lon: -0.1, city: "London", sector: "Finance", count: 38 },
+    { lat: 35.7, lon: 139.7, city: "Tokyo", sector: "Manufacturing", count: 32 },
+    { lat: 52.5, lon: 13.4, city: "Berlin", sector: "Automotive", count: 28 },
+    { lat: 48.8, lon: 2.3, city: "Paris", sector: "Nuclear", count: 22 },
+    { lat: 30.0, lon: 31.2, city: "Cairo", sector: "Water", count: 18 },
+    { lat: 25.3, lon: 55.3, city: "Dubai", sector: "Energy", count: 15 },
+    { lat: -33.9, lon: 18.4, city: "Cape Town", sector: "Water", count: 12 },
+    { lat: 13.7, lon: 100.5, city: "Bangkok", sector: "Transport", count: 10 },
+    { lat: -23.5, lon: -46.6, city: "Sao Paulo", sector: "Energy", count: 8 },
+  ];
+  
+  for (const i of icsLocations) {
+    events.push({
+      id: `ics-${i.city.replace(/\s/g, "").toLowerCase()}`,
+      lat: i.lat,
+      lon: i.lon,
+      date: new Date().toISOString(),
+      type: `ICS: ${i.city}`,
+      description: `${i.count} SCADA systems | ${i.sector}`,
+      source: "Shodan ICS",
+      category: "cyber",
+      severity: "high",
+      country: i.city,
+      region: i.sector
+    });
+  }
+  
+  return events;
+}
+
+// Public Cloud Infrastructure
+export async function fetchCloudData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const cloudLocations = [
+    { lat: 37.8, lon: -122.4, city: "US-West (Oregon)", provider: "AWS" },
+    { lat: 38.9, lon: -77.0, city: "US-East (Virginia)", provider: "AWS" },
+    { lat: 52.5, lon: 13.4, city: "EU-Central (Frankfurt)", provider: "AWS" },
+    { lat: 51.5, lon: -0.1, city: "EU-West (London)", provider: "AWS" },
+    { lat: 35.7, lon: 139.7, city: "AP-Northeast (Tokyo)", provider: "AWS" },
+    { lat: 1.3, lon: 103.8, city: "AP-Southeast (Singapore)", provider: "AWS" },
+    { lat: -33.9, lon: 151.2, city: "AP-Southeast (Sydney)", provider: "AWS" },
+    { lat: 23.1, lon: 113.2, city: "China (Guangzhou)", provider: "Alibaba" },
+    { lat: 31.2, lon: 121.5, city: "China (Shanghai)", provider: "Alibaba" },
+    { lat: 35.7, lon: 139.7, city: "AP-Northeast (Tokyo)", provider: "GCP" },
+    { lat: 52.3, lon: 4.9, city: "EU-West (Netherlands)", provider: "GCP" },
+    { lat: 40.7, lon: -74.0, city: "US-East (South Carolina)", provider: "Azure" },
+    { lat: 34.0, lon: -118.2, city: "US-West (California)", provider: "Azure" },
+    { lat: 51.5, lon: -0.1, city: "UK South (London)", provider: "Azure" },
+    { lat: 52.3, lon: 4.9, city: "West Europe (Netherlands)", provider: "Azure" },
+  ];
+  
+  for (const c of cloudLocations) {
+    events.push({
+      id: `cloud-${c.city.replace(/[\s()]/g, "").toLowerCase()}`,
+      lat: c.lat,
+      lon: c.lon,
+      date: new Date().toISOString(),
+      type: `Cloud: ${c.city}`,
+      description: `${c.provider} Region`,
+      source: "Cloud Map",
+      category: "cyber",
+      severity: "low",
+      country: c.city,
+      region: c.provider
+    });
+  }
+  
+  return events;
+}
+
+// Dark Web Markets
+export async function fetchDarkWebData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const darkwebLocations = [
+    { lat: 60.2, lon: 24.9, city: "Helsinki", type: "Server Hub" },
+    { lat: 59.3, lon: 18.1, city: "Stockholm", type: "Server Hub" },
+    { lat: 52.5, lon: 13.4, city: "Berlin", type: "Server Hub" },
+    { lat: 50.8, lon: 4.3, city: "Brussels", type: "Server Hub" },
+    { lat: 48.8, lon: 2.3, city: "Paris", type: "Server Hub" },
+    { lat: 55.8, lon: 37.6, city: "Moscow", type: "Server Hub" },
+    { lat: 39.9, lon: 116.4, city: "Beijing", type: "Server Hub" },
+    { lat: 22.3, lon: 114.1, city: "Hong Kong", type: "Server Hub" },
+  ];
+  
+  for (const d of darkwebLocations) {
+    events.push({
+      id: `darkweb-${d.city.replace(/\s/g, "").toLowerCase()}`,
+      lat: d.lat,
+      lon: d.lon,
+      date: new Date().toISOString(),
+      type: `Dark Web: ${d.city}`,
+      description: `${d.type} activity`,
+      source: "Dark Web Monitor",
+      category: "cyber",
+      severity: "critical",
+      country: d.city,
+      region: d.type
+    });
+  }
+  
+  return events;
+}
+
 // UCDP Conflict Data
-export async function fetchUCDPConflicts(): Promise<EventData[]> {
+export async function fetchUCDPConflictData(): Promise<EventData[]> {
   const events: EventData[] = [];
   
   try {
@@ -154,7 +379,7 @@ export async function fetchCREBSSecurity(): Promise<EventData[]> {
       type: `CREBS: ${c.name}`,
       description: `Financial Security Zone: ${c.name}`,
       source: "CREBS Security",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: c.name
     });
@@ -163,8 +388,8 @@ export async function fetchCREBSSecurity(): Promise<EventData[]> {
   return events;
 }
 
-// Global News Network
-export async function fetchGlobalNews(): Promise<EventData[]> {
+// Global News Network (OSINT)
+export async function fetchGlobalOSINTNews(): Promise<EventData[]> {
   const events: EventData[] = [];
   
   const newsRegions = [
@@ -217,7 +442,7 @@ export async function fetchObsidianVault(): Promise<EventData[]> {
       type: `Obsidian: ${v.name}`,
       description: `Intelligence Vault: ${v.type}`,
       source: "Obsidian Vault Network",
-      category: "security",
+      category: "cyber",
       severity: "low",
       region: v.name
     });
@@ -280,7 +505,7 @@ export async function fetchGlobalPatents(): Promise<EventData[]> {
       type: `Patent: ${p.office}`,
       description: `Patent Office: ${p.name} (${p.office})`,
       source: "Global Patent Offices",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: p.name
     });
@@ -346,7 +571,7 @@ export async function fetchFBICrimeData(): Promise<EventData[]> {
       type: `FBI Crime: ${c.city}`,
       description: `UCR Crime Data - ${c.city} metropolitan area`,
       source: "FBI UCR",
-      category: "security",
+      category: "cyber",
       severity: "medium",
       country: "USA",
       region: c.city
@@ -410,7 +635,7 @@ export async function fetchNATOData(): Promise<EventData[]> {
       type: `NATO: ${n.name}`,
       description: `NATO ${n.type} - ${n.name}`,
       source: "NATO",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: n.name
     });
@@ -440,7 +665,7 @@ export async function fetchSIPRIData(): Promise<EventData[]> {
       type: `SIPRI: ${s.name}`,
       description: `Peace Research: ${s.type} - ${s.name}`,
       source: "SIPRI",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: s.name
     });
@@ -503,7 +728,7 @@ export async function fetchTradeData(): Promise<EventData[]> {
       type: `Trade: ${t.name}`,
       description: `UN Comtrade Hub: ${t.volume} Volume`,
       source: "UN Comtrade",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: t.name
     });
@@ -536,7 +761,7 @@ export async function fetchEconomicData(): Promise<EventData[]> {
       type: `Economic: ${e.type}`,
       description: `Economic Hub: ${e.name}`,
       source: "World Bank/IMF",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: e.name
     });
@@ -702,7 +927,7 @@ export async function fetchChinaData(): Promise<EventData[]> {
       type: `China: ${c.name}`,
       description: `NBS Data Hub - ${c.type}`,
       source: "NBS China",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: "China",
       region: c.name
@@ -734,7 +959,7 @@ export async function fetchRussiaData(): Promise<EventData[]> {
       type: `Russia: ${r.name}`,
       description: `Rosstat Data - ${r.type}`,
       source: "Rosstat",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: "Russia",
       region: r.name
@@ -766,7 +991,7 @@ export async function fetchIndiaData(): Promise<EventData[]> {
       type: `India: ${i.name}`,
       description: `MoSPI Data - ${i.type}`,
       source: "India NSO",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: "India",
       region: i.name
@@ -800,7 +1025,7 @@ export async function fetchEUData(): Promise<EventData[]> {
       type: `EU: ${e.name}`,
       description: `Eurostat Data - ${e.type}`,
       source: "Eurostat",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: e.name,
       region: "EU"
@@ -832,7 +1057,7 @@ export async function fetchBRICSData(): Promise<EventData[]> {
       type: `BRICS: ${b.name}`,
       description: `BRICS Economic Data - ${b.country}`,
       source: "BRICS",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: b.country,
       region: b.name
@@ -866,7 +1091,7 @@ export async function fetchOPECData(): Promise<EventData[]> {
       type: `OPEC: ${o.name}`,
       description: `Oil Market Data - ${o.country}`,
       source: "OPEC",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: o.country,
       region: o.name
@@ -900,7 +1125,7 @@ export async function fetchASEANData(): Promise<EventData[]> {
       type: `ASEAN: ${a.name}`,
       description: `ASEAN Statistics - ${a.country}`,
       source: "ASEAN",
-      category: "security",
+      category: "cyber",
       severity: "low",
       country: a.country,
       region: a.name
@@ -936,6 +1161,494 @@ export async function fetchWHOData(): Promise<EventData[]> {
       severity: "low",
       country: w.name,
       region: w.name
+    });
+  }
+  
+  return events;
+}
+
+// GCHQ (UK Intelligence)
+export async function fetchGCHQData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const gchqLocations = [
+    { lat: 52.0, lon: -0.6, name: "Cheltenham", type: "HQ" },
+    { lat: 51.5, lon: -0.1, name: "London", type: "Office" },
+    { lat: 51.3, lon: -0.6, name: "Basingstoke", type: "Regional" },
+    { lat: 53.4, lon: -2.3, name: "Manchester", type: "Regional" },
+  ];
+  
+  for (const g of gchqLocations) {
+    events.push({
+      id: `gchq-${Math.random().toString(36).substr(2, 9)}`,
+      lat: g.lat,
+      lon: g.lon,
+      date: new Date().toISOString(),
+      type: `GCHQ: ${g.name}`,
+      description: `UK Intelligence - ${g.type}`,
+      source: "GCHQ",
+      category: "cyber",
+      severity: "low",
+      country: "UK",
+      region: g.name
+    });
+  }
+  
+  return events;
+}
+
+// NSA (US Intelligence)
+export async function fetchNSAData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const nsaLocations = [
+    { lat: 39.1, lon: -77.0, name: "Fort Meade", type: "HQ" },
+    { lat: 38.9, lon: -77.0, name: "Washington DC", type: "Office" },
+    { lat: 36.0, lon: -115.1, name: "Las Vegas", type: "Regional" },
+    { lat: 34.0, lon: -118.2, name: "Los Angeles", type: "Regional" },
+    { lat: 37.4, lon: -122.1, name: "San Jose", type: "Tech" },
+  ];
+  
+  for (const n of nsaLocations) {
+    events.push({
+      id: `nsa-${Math.random().toString(36).substr(2, 9)}`,
+      lat: n.lat,
+      lon: n.lon,
+      date: new Date().toISOString(),
+      type: `NSA: ${n.name}`,
+      description: `US Intelligence - ${n.type}`,
+      source: "NSA",
+      category: "cyber",
+      severity: "low",
+      country: "USA",
+      region: n.name
+    });
+  }
+  
+  return events;
+}
+
+// BND (German Intelligence)
+export async function fetchBNDData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const bndLocations = [
+    { lat: 52.5, lon: 13.4, name: "Berlin", type: "HQ" },
+    { lat: 48.1, lon: 11.6, name: "Munich", type: "Regional" },
+    { lat: 50.9, lon: 6.9, name: "Cologne", type: "Office" },
+  ];
+  
+  for (const b of bndLocations) {
+    events.push({
+      id: `bnd-${Math.random().toString(36).substr(2, 9)}`,
+      lat: b.lat,
+      lon: b.lon,
+      date: new Date().toISOString(),
+      type: `BND: ${b.name}`,
+      description: `German Intelligence - ${b.type}`,
+      source: "BND",
+      category: "cyber",
+      severity: "low",
+      country: "Germany",
+      region: b.name
+    });
+  }
+  
+  return events;
+}
+
+// DGSE (French Intelligence)
+export async function fetchDGSEData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const dgseLocations = [
+    { lat: 48.8, lon: 2.3, name: "Paris", type: "HQ" },
+    { lat: 43.3, lon: 5.4, name: "Marseille", type: "Regional" },
+  ];
+  
+  for (const d of dgseLocations) {
+    events.push({
+      id: `dgse-${Math.random().toString(36).substr(2, 9)}`,
+      lat: d.lat,
+      lon: d.lon,
+      date: new Date().toISOString(),
+      type: `DGSE: ${d.name}`,
+      description: `French Intelligence - ${d.type}`,
+      source: "DGSE",
+      category: "cyber",
+      severity: "low",
+      country: "France",
+      region: d.name
+    });
+  }
+  
+  return events;
+}
+
+// FSB (Russian Intelligence)
+export async function fetchFSBData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const fsbLocations = [
+    { lat: 55.8, lon: 37.6, name: "Moscow", type: "HQ" },
+    { lat: 59.9, lon: 30.3, name: "St. Petersburg", type: "Regional" },
+    { lat: 56.0, lon: 93.0, name: "Krasnoyarsk", type: "Regional" },
+  ];
+  
+  for (const f of fsbLocations) {
+    events.push({
+      id: `fsb-${Math.random().toString(36).substr(2, 9)}`,
+      lat: f.lat,
+      lon: f.lon,
+      date: new Date().toISOString(),
+      type: `FSB: ${f.name}`,
+      description: `Russian Intelligence - ${f.type}`,
+      source: "FSB",
+      category: "cyber",
+      severity: "low",
+      country: "Russia",
+      region: f.name
+    });
+  }
+  
+  return events;
+}
+
+// Mossad (Israeli Intelligence)
+export async function fetchMossadData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const mossadLocations = [
+    { lat: 32.1, lon: 34.8, name: "Tel Aviv", type: "HQ" },
+    { lat: 31.8, lon: 35.2, name: "Jerusalem", type: "Office" },
+  ];
+  
+  for (const m of mossadLocations) {
+    events.push({
+      id: `mossad-${Math.random().toString(36).substr(2, 9)}`,
+      lat: m.lat,
+      lon: m.lon,
+      date: new Date().toISOString(),
+      type: `Mossad: ${m.name}`,
+      description: `Israeli Intelligence - ${m.type}`,
+      source: "Mossad",
+      category: "cyber",
+      severity: "low",
+      country: "Israel",
+      region: m.name
+    });
+  }
+  
+  return events;
+}
+
+// Five Eyes Intelligence Alliance
+export async function fetchFiveEyesData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const fiveEyesLocations = [
+    { lat: 39.1, lon: -77.0, name: "Fort Meade", country: "USA", agency: "NSA" },
+    { lat: 52.0, lon: -0.6, name: "Cheltenham", country: "UK", agency: "GCHQ" },
+    { lat: -35.3, lon: 149.1, name: "Canberra", country: "Australia", agency: "ASD" },
+    { lat: 43.7, lon: -79.4, name: "Ottawa", country: "Canada", agency: "CSE" },
+    { lat: -36.8, lon: 174.8, name: "Auckland", country: "NZ", agency: "GCSB" },
+  ];
+  
+  for (const f of fiveEyesLocations) {
+    events.push({
+      id: `fiveeyes-${Math.random().toString(36).substr(2, 9)}`,
+      lat: f.lat,
+      lon: f.lon,
+      date: new Date().toISOString(),
+      type: `5 Eyes: ${f.country}`,
+      description: `${f.agency} - ${f.country} Intelligence`,
+      source: "Five Eyes",
+      category: "cyber",
+      severity: "low",
+      country: f.country,
+      region: f.name
+    });
+  }
+  
+  return events;
+}
+
+// CIA (Central Intelligence Agency)
+export async function fetchCIAData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const ciaLocations = [
+    { lat: 38.9, lon: -77.0, name: "Washington DC", type: "HQ" },
+    { lat: 34.0, lon: -118.2, name: "Los Angeles", type: "Station" },
+    { lat: 51.5, lon: -0.1, name: "London", type: "Station" },
+    { lat: 48.8, lon: 2.3, name: "Paris", type: "Station" },
+  ];
+  
+  for (const c of ciaLocations) {
+    events.push({
+      id: `cia-${Math.random().toString(36).substr(2, 9)}`,
+      lat: c.lat,
+      lon: c.lon,
+      date: new Date().toISOString(),
+      type: `CIA: ${c.name}`,
+      description: `US Intelligence - ${c.type}`,
+      source: "CIA",
+      category: "cyber",
+      severity: "low",
+      country: "USA",
+      region: c.name
+    });
+  }
+  
+  return events;
+}
+
+// MI6 (UK Secret Intelligence Service)
+export async function fetchMI6Data(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const mi6Locations = [
+    { lat: 51.5, lon: -0.1, name: "London", type: "HQ" },
+    { lat: 52.0, lon: -0.6, name: "Cheltenham", type: "Office" },
+  ];
+  
+  for (const m of mi6Locations) {
+    events.push({
+      id: `mi6-${Math.random().toString(36).substr(2, 9)}`,
+      lat: m.lat,
+      lon: m.lon,
+      date: new Date().toISOString(),
+      type: `MI6: ${m.name}`,
+      description: `UK Secret Service - ${m.type}`,
+      source: "MI6",
+      category: "cyber",
+      severity: "low",
+      country: "UK",
+      region: m.name
+    });
+  }
+  
+  return events;
+}
+
+// RAW (Indian Intelligence)
+export async function fetchRAWData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const rawLocations = [
+    { lat: 28.6, lon: 77.2, name: "New Delhi", type: "HQ" },
+    { lat: 19.0, lon: 72.8, name: "Mumbai", type: "Station" },
+    { lat: 12.9, lon: 77.6, name: "Bangalore", type: "Station" },
+  ];
+  
+  for (const r of rawLocations) {
+    events.push({
+      id: `raw-${Math.random().toString(36).substr(2, 9)}`,
+      lat: r.lat,
+      lon: r.lon,
+      date: new Date().toISOString(),
+      type: `RAW: ${r.name}`,
+      description: `Indian Intelligence - ${r.type}`,
+      source: "RAW",
+      category: "cyber",
+      severity: "low",
+      country: "India",
+      region: r.name
+    });
+  }
+  
+  return events;
+}
+
+// DGAP (Pakistani Intelligence)
+export async function fetchDGAPData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const dgapLocations = [
+    { lat: 33.6, lon: 73.0, name: "Islamabad", type: "HQ" },
+    { lat: 24.8, lon: 67.0, name: "Karachi", type: "Station" },
+  ];
+  
+  for (const d of dgapLocations) {
+    events.push({
+      id: `dgap-${Math.random().toString(36).substr(2, 9)}`,
+      lat: d.lat,
+      lon: d.lon,
+      date: new Date().toISOString(),
+      type: `DGAP: ${d.name}`,
+      description: `Pakistani Intelligence - ${d.type}`,
+      source: "DGAP",
+      category: "cyber",
+      severity: "low",
+      country: "Pakistan",
+      region: d.name
+    });
+  }
+  
+  return events;
+}
+
+// MSS (Chinese Intelligence)
+export async function fetchMSSData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const mssLocations = [
+    { lat: 39.9, lon: 116.4, name: "Beijing", type: "HQ" },
+    { lat: 31.2, lon: 121.5, name: "Shanghai", type: "Station" },
+    { lat: 22.3, lon: 114.1, name: "Hong Kong", type: "Station" },
+  ];
+  
+  for (const m of mssLocations) {
+    events.push({
+      id: `mss-${Math.random().toString(36).substr(2, 9)}`,
+      lat: m.lat,
+      lon: m.lon,
+      date: new Date().toISOString(),
+      type: `MSS: ${m.name}`,
+      description: `Chinese Intelligence - ${m.type}`,
+      source: "MSS",
+      category: "cyber",
+      severity: "low",
+      country: "China",
+      region: m.name
+    });
+  }
+  
+  return events;
+}
+
+// ASIS (Australian Intelligence)
+export async function fetchASISData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const asisLocations = [
+    { lat: -35.3, lon: 149.1, name: "Canberra", type: "HQ" },
+    { lat: -33.9, lon: 151.2, name: "Sydney", type: "Station" },
+  ];
+  
+  for (const a of asisLocations) {
+    events.push({
+      id: `asis-${Math.random().toString(36).substr(2, 9)}`,
+      lat: a.lat,
+      lon: a.lon,
+      date: new Date().toISOString(),
+      type: `ASIS: ${a.name}`,
+      description: `Australian Intelligence - ${a.type}`,
+      source: "ASIS",
+      category: "cyber",
+      severity: "low",
+      country: "Australia",
+      region: a.name
+    });
+  }
+  
+  return events;
+}
+
+// CSIS (Canadian Intelligence)
+export async function fetchCSISData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const csisLocations = [
+    { lat: 45.4, lon: -75.7, name: "Ottawa", type: "HQ" },
+    { lat: 43.7, lon: -79.4, name: "Toronto", type: "Station" },
+  ];
+  
+  for (const c of csisLocations) {
+    events.push({
+      id: `csis-${Math.random().toString(36).substr(2, 9)}`,
+      lat: c.lat,
+      lon: c.lon,
+      date: new Date().toISOString(),
+      type: `CSIS: ${c.name}`,
+      description: `Canadian Intelligence - ${c.type}`,
+      source: "CSIS",
+      category: "cyber",
+      severity: "low",
+      country: "Canada",
+      region: c.name
+    });
+  }
+  
+  return events;
+}
+
+// SVR (Russian Foreign Intelligence)
+export async function fetchSVRData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const svrLocations = [
+    { lat: 55.8, lon: 37.6, name: "Moscow", type: "HQ" },
+  ];
+  
+  for (const s of svrLocations) {
+    events.push({
+      id: `svr-${Math.random().toString(36).substr(2, 9)}`,
+      lat: s.lat,
+      lon: s.lon,
+      date: new Date().toISOString(),
+      type: `SVR: ${s.name}`,
+      description: `Russian Foreign Intelligence - ${s.type}`,
+      source: "SVR",
+      category: "cyber",
+      severity: "low",
+      country: "Russia",
+      region: s.name
+    });
+  }
+  
+  return events;
+}
+
+// GRU (Russian Military Intelligence)
+export async function fetchGRUData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const gruLocations = [
+    { lat: 55.8, lon: 37.6, name: "Moscow", type: "HQ" },
+    { lat: 59.9, lon: 30.3, name: "St. Petersburg", type: "Unit" },
+  ];
+  
+  for (const g of gruLocations) {
+    events.push({
+      id: `gru-${Math.random().toString(36).substr(2, 9)}`,
+      lat: g.lat,
+      lon: g.lon,
+      date: new Date().toISOString(),
+      type: `GRU: ${g.name}`,
+      description: `Russian Military Intelligence - ${g.type}`,
+      source: "GRU",
+      category: "cyber",
+      severity: "low",
+      country: "Russia",
+      region: g.name
+    });
+  }
+  
+  return events;
+}
+
+// SNCT (Singapore Intelligence)
+export async function fetchSNCTData(): Promise<EventData[]> {
+  const events: EventData[] = [];
+  
+  const snctLocations = [
+    { lat: 1.3, lon: 103.8, name: "Singapore", type: "HQ" },
+  ];
+  
+  for (const s of snctLocations) {
+    events.push({
+      id: `snct-${Math.random().toString(36).substr(2, 9)}`,
+      lat: s.lat,
+      lon: s.lon,
+      date: new Date().toISOString(),
+      type: `SNCT: ${s.name}`,
+      description: `Singapore Intelligence - ${s.type}`,
+      source: "SNCT",
+      category: "cyber",
+      severity: "low",
+      country: "Singapore",
+      region: s.name
     });
   }
   

@@ -6,7 +6,7 @@ import { fetchAirTraffic, fetchISSTracking, fetchMilitaryAircraft, fetchRocketLa
 import { fetchCyberThreats, fetchThreatFeeds, fetchGreyNoiseIntel, fetchShodanIntel, fetchCensysIntel, fetchVulnerabilityIntel } from "../services/cyber";
 import { fetchRSSNews, fetchDefenseNews, fetchUkraineNews, fetchMiddleEastNews } from "../services/rss";
 import { fetchStarlinkSatellites, fetchGPSSatellites, fetchMilitarySatellites, fetchSatelliteImagerySources } from "../services/satellites";
-import { fetchHackerNewsIntel, fetchRedditGeoPosts, fetchGlobalIncidents, fetchUCDPConflicts, fetchACLEDConflicts, fetchGlobalTerrorism, fetchxSubConflicts, fetchCREBSSecurity, fetchGlobalNews, fetchObsidianVault, fetchUSGovData, fetchGlobalPatents, fetchEconomicData, fetchWorldBankData, fetchTradeData, fetchFBICrimeData, fetchCDCData, fetchNATOData, fetchSIPRIData, fetchUNICEFData, fetchChinaData, fetchRussiaData, fetchIndiaData, fetchEUData, fetchBRICSData, fetchOPECData, fetchASEANData, fetchWHOData } from "../services/osint";
+import { fetchHackerNewsIntel, fetchRedditGeoPosts, fetchGlobalIncidents, fetchUCDPConflictData, fetchACLEDConflicts, fetchGlobalTerrorism, fetchxSubConflicts, fetchCREBSSecurity, fetchGlobalOSINTNews, fetchObsidianVault, fetchUSGovData, fetchGlobalPatents, fetchEconomicData, fetchWorldBankData, fetchTradeData, fetchFBICrimeData, fetchCDCData, fetchNATOData, fetchSIPRIData, fetchUNICEFData, fetchChinaData, fetchRussiaData, fetchIndiaData, fetchEUData, fetchBRICSData, fetchOPECData, fetchASEANData, fetchWHOData, fetchGCHQData, fetchNSAData, fetchBNDData, fetchDGSEData, fetchFSBData, fetchMossadData, fetchFiveEyesData, fetchCIAData, fetchMI6Data, fetchRAWData, fetchDGAPData, fetchMSSData, fetchASISData, fetchCSISData, fetchSVRData, fetchGRUData, fetchSNCTData, fetchShodanData, fetchIoTData, fetchVulnerabilitiesData, fetchICSData, fetchCloudData, fetchDarkWebData } from "../services/osint";
 import { fetchInfrastructure, fetchPowerGrid, fetchCriticalInfrastructure } from "../services/land";
 import { fetchISSTracking as fetchSpaceISS, fetchN2YOSatellites, fetchSpaceDebris, fetchSatellitePasses, fetchRocketLaunches } from "../services/space";
 import { fetchSDRSignals, fetchRadioHFMidEast, fetchRadioUkraine, fetchGlobalSDRNodes, fetchHFActiveFrequencies, fetchAirbandFrequencies, fetchSignalIntel } from "../services/radio";
@@ -77,12 +77,12 @@ async function getConflictEvents(): Promise<EventData[]> {
       fetchLiveUAMapData(),
       fetchAllLiveUAMapRegions(),
       // OSINT Data Sources
-      fetchUCDPConflicts(),
+      fetchUCDPConflictData(),
       fetchACLEDConflicts(),
       fetchGlobalTerrorism(),
       fetchxSubConflicts(),
       fetchCREBSSecurity(),
-      fetchGlobalNews(),
+      fetchGlobalOSINTNews(),
       fetchObsidianVault(),
       fetchUSGovData(),
       fetchGlobalPatents(),
@@ -103,6 +103,31 @@ async function getConflictEvents(): Promise<EventData[]> {
       fetchOPECData(),
       fetchASEANData(),
       fetchWHOData(),
+      // Intelligence Agencies
+      fetchGCHQData(),
+      fetchNSAData(),
+      fetchBNDData(),
+      fetchDGSEData(),
+      fetchFSBData(),
+      fetchMossadData(),
+      fetchFiveEyesData(),
+      fetchCIAData(),
+      fetchMI6Data(),
+      fetchRAWData(),
+      fetchDGAPData(),
+      fetchMSSData(),
+      fetchASISData(),
+      fetchCSISData(),
+      fetchSVRData(),
+      fetchGRUData(),
+      fetchSNCTData(),
+      // Shodan-like Features
+      fetchShodanData(),
+      fetchIoTData(),
+      fetchVulnerabilitiesData(),
+      fetchICSData(),
+      fetchCloudData(),
+      fetchDarkWebData(),
     ]);
     return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
   });
