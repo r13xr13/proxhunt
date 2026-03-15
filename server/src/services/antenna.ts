@@ -1,8 +1,8 @@
 import axios from "axios";
 import { EventData } from "./conflict";
 
-const ANTENA_API_URL = process.env.ANTENA_API_URL || "http://localhost:3000";
-const ANTENA_API_KEY = process.env.ANTENA_API_KEY || "ant_agent_c9f01afd59322dc2dca1daf5e436c87b";
+const ANTENA_API_URL = process.env.ANTENA_API_URL;
+const ANTENA_API_KEY = process.env.ANTENA_API_KEY;
 
 // Conflict-relevant signal types and keywords
 const CONFLICT_RELEVANT_TYPES = [
@@ -18,6 +18,11 @@ const CONFLICT_KEYWORDS = [
 ];
 
 export async function fetchAntennaSignals(): Promise<EventData[]> {
+  // Skip if antenna API URL is not configured
+  if (!ANTENA_API_URL) {
+    return [];
+  }
+
   try {
     // Fetch detected signals/transmissions from antenna system
     const response = await axios.get(
@@ -106,6 +111,11 @@ export async function fetchAntennaSignals(): Promise<EventData[]> {
 
 // Get antenna array status and health
 export async function fetchAntennaStatus(): Promise<EventData[]> {
+  // Skip if antenna API URL is not configured
+  if (!ANTENA_API_URL) {
+    return [];
+  }
+
   try {
     const response = await axios.get(
       `${ANTENA_API_URL}/api/status`,

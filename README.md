@@ -267,10 +267,14 @@ OLLAMA_MODEL=llama3.2:latest
 **Antenna System (Optional)**
 The antenna service provides radio signal data for the globe. It's optional - if not configured, other radio sources will still work.
 
+**Note:** This is for radio frequency monitoring systems (SDR, SIGINT), not the Antenna AI Agent network.
+
 To enable:
 1. Set `ANTENA_API_URL` to your antenna monitoring system URL
 2. Set `ANTENA_API_KEY` for authentication
 3. The system should provide `/api/signals` and `/api/status` endpoints
+
+If you don't have a radio monitoring system, leave these blank and the service will be skipped.
 
 ### Self-Hosted
 
