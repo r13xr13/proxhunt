@@ -264,6 +264,14 @@ OLLAMA_MODEL=llama3.2:latest
 3. Railway Ollama Service
    - Deploy Ollama as a separate Railway service with GPU support
 
+**Antenna System (Optional)**
+The antenna service provides radio signal data for the globe. It's optional - if not configured, other radio sources will still work.
+
+To enable:
+1. Set `ANTENA_API_URL` to your antenna monitoring system URL
+2. Set `ANTENA_API_KEY` for authentication
+3. The system should provide `/api/signals` and `/api/status` endpoints
+
 ### Self-Hosted
 
 ```bash
