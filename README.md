@@ -226,7 +226,29 @@ OLLAMA_BASE_URL=https://your-ollama-server.com      # For remote server
 OLLAMA_MODEL=llama3.2:latest
 ```
 
-**Note:** The Docker container no longer includes Ollama. You need to run Ollama separately on your local machine or another server and configure `OLLAMA_BASE_URL` to point to it.
+**Note:** The Docker container no longer includes Ollama. You need to run Ollama separately and configure `OLLAMA_BASE_URL` to point to it.
+
+**Setting up Ollama for Remote Access:**
+
+*Option 1: Local Machine with Tunnel (Development)*
+1. Install Ollama on your local machine
+2. Expose Ollama via a tunnel service (e.g., Cloudflare Tunnel, ngrok):
+   ```bash
+   ngrok http 11434
+   ```
+3. Set `OLLAMA_BASE_URL` to the ngrok URL in Railway dashboard
+
+*Option 2: Remote VPS/Server*
+1. Install Ollama on a remote server/VPS
+2. Configure Ollama to listen on all interfaces:
+   ```bash
+   OLLAMA_HOST=0.0.0.0 ollama serve
+   ```
+3. Set `OLLAMA_BASE_URL` to your server's IP/domain in Railway dashboard
+4. Ensure firewall allows port 11434
+
+*Option 3: Railway Ollama Service (Recommended for production)*
+Deploy Ollama as a separate Railway service with GPU support.
 
 ### Self-Hosted
 
