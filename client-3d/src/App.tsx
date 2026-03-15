@@ -79,24 +79,16 @@ type TileLayerKey = keyof typeof TILE_LAYERS;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORY_COLORS: Record<string, string> = {
-  conflict: "#ef4444",
-  maritime: "#3b82f6",
-  air: "#22c55e",
-  cyber: "#a855f7",
-  land: "#f97316",
-  space: "#14b8a6",
-  radio: "#eab308",
-  weather: "#60a5fa",
-  earthquakes: "#9333ea",
-  social: "#ec4899",
-  cameras: "#06b6d4",
+const CATEGORY_ICONS: Record<string, string> = {
+  conflict: "C", maritime: "M", air: "A", cyber: "X",
+  land: "L", space: "S", radio: "R", weather: "W",
+  earthquakes: "Q", social: "S", cameras: "O",
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  conflict: "⚔", maritime: "⛵", air: "✈", cyber: "⬡",
-  land: "◉", space: "◎", radio: "◈", weather: "◐",
-  earthquakes: "◍", social: "◑", cameras: "◆",
+const CATEGORY_COLORS: Record<string, string> = {
+  conflict: "#ef4444", maritime: "#3b82f6", air: "#22c55e", cyber: "#a855f7",
+  land: "#f97316", space: "#14b8a6", radio: "#eab308", weather: "#60a5fa",
+  earthquakes: "#9333ea", social: "#ec4899", cameras: "#06b6d4",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -172,7 +164,7 @@ function FloatPanel({ title, onClose, children, style }: { title: string; onClos
     <div className="float-panel" style={style}>
       <div className="float-header">
         <span className="float-title">{title}</span>
-        <button className="float-close" onClick={onClose}>✕</button>
+        <button className="float-close" onClick={onClose}>X</button>
       </div>
       <div className="float-body">{children}</div>
     </div>
@@ -339,6 +331,12 @@ export default function App() {
 
   // Dedicated AI Chat Panel
   const [showAIChatPanel, setShowAIChatPanel] = useState(false);
+
+  // Dedicated SDR Panel
+  const [showSDRPanel, setShowSDRPanel] = useState(false);
+
+  // Dedicated Antenna Agent Panel
+  const [showAntennaPanel, setShowAntennaPanel] = useState(false);
 
 
   // ── Data loading ──
@@ -1011,12 +1009,9 @@ export default function App() {
           <div className="tab-bar">
              {([
                ["layers", "⊞", "Layers"],
-               ["categories", "◈", "Categories"],
-               ["filters", "⊟", "Filters"],
-               ["import", "⊕", "Import"],
-               ["settings", "⚙", "Settings"],
-               ["aiChat", "🤖", "AI Chat"],
-               ["sdr", "📻", "SDR Radio"],
+["categories", "C", "Categories"],
+               ["aiChat", "AI", "AI Chat"],
+               ["sdr", "SDR", "SDR Radio"],
              ] as [LeftTab, string, string][]).map(([tab, icon, label]) => (
               <button key={tab} className={cls("tab-btn", activeLeftTab === tab && "active")} onClick={() => setActiveLeftTab(tab)}>
                 <span className="tab-icon">{icon}</span>
@@ -1034,7 +1029,7 @@ export default function App() {
                   <div className="style-grid">
                     {(["dark", "light", "satellite", "terrain"] as GlobeTheme[]).map(s => (
                       <button key={s} className={cls("style-btn", globeTheme === s && "active")} onClick={() => setGlobeTheme(s)}>
-                        <span className="style-btn-icon">{s === "dark" ? "◑" : s === "light" ? "◐" : s === "satellite" ? "◎" : "◉"}</span>
+                        <span className="style-btn-icon">{s === "dark" ? "D" : s === "light" ? "L" : s === "satellite" ? "S" : "T"}</span>
                         {s}
                       </button>
                     ))}
@@ -1046,7 +1041,7 @@ export default function App() {
                   <CheckRow checked={showAtmosphere} onChange={setShowAtmosphere} icon="○" label="Atmosphere Glow" />
                   <CheckRow checked={showGraticules} onChange={setShowGraticules} icon="⊞" label="Grid Lines" />
                   <CheckRow checked={showClouds} onChange={setShowClouds} icon="◌" label="Cloud Layer" />
-                  <CheckRow checked={globeRotation} onChange={setGlobeRotation} icon="↻" label="Auto Rotate" />
+                  <CheckRow checked={globeRotation} onChange={setGlobeRotation} icon="R" label="Auto Rotate" />
                   <CheckRow checked={showTerrain} onChange={setShowTerrain} icon="◬" label="3D Terrain" />
                   <CheckRow checked={showCameras} onChange={setShowCameras} icon="◆" label="Camera Feeds" />
                 </div>
@@ -1067,13 +1062,10 @@ export default function App() {
 
                  <div className="section">
                    <SectionLabel>Data Layers</SectionLabel>
-                   <CheckRow checked={layers.showHexBin} onChange={v => setLayer("showHexBin", v)} icon="⬡" label="Heat Clusters" />
-                   <CheckRow checked={layers.showRings} onChange={v => setLayer("showRings", v)} icon="◎" label="Pulse Rings" />
-                   <CheckRow checked={layers.showHeatmap} onChange={v => setLayer("showHeatmap", v)} icon="▣" label="Density Map" />
-                   <CheckRow checked={layers.showArcs} onChange={v => setLayer("showArcs", v)} icon="◜◝" label="Connections" />
-                   <CheckRow checked={layers.showPaths} onChange={v => setLayer("showPaths", v)} icon="→" label="Movement" />
-                   <CheckRow checked={layers.showPolygons} onChange={v => setLayer("showPolygons", v)} icon="⬡" label="Regions" />
-                   <CheckRow checked={layers.showSDR} onChange={v => setLayer("showSDR", v)} icon="📻" label="SDR Signals" />
+<CheckRow checked={layers.showHexBin} onChange={v => setLayer("showHexBin", v)} icon="X" label="Heat Clusters" />
+                   <CheckRow checked={layers.showRings} onChange={v => setLayer("showRings", v)} icon="O" label="Pulse Rings" />
+                   <CheckRow checked={layers.showPolygons} onChange={v => setLayer("showPolygons", v)} icon="P" label="Regions" />
+                   <CheckRow checked={layers.showSDR} onChange={v => setLayer("showSDR", v)} icon="S" label="SDR Signals" />
                  </div>
 
                  <div className="section">
@@ -1091,7 +1083,7 @@ export default function App() {
                      <div className="range-label"><span>Point Size</span><span>{pointSize}</span></div>
                      <input type="range" min={1} max={10} value={pointSize} onChange={e => setPointSize(+e.target.value)} />
                    </div>
-                   <CheckRow checked={enableClustering} onChange={v => setEnableClustering(v)} icon="◈" label="Point Clustering (disabled: breaks clicks)" />
+                   <CheckRow checked={enableClustering} onChange={v => setEnableClustering(v)} icon="M" label="Point Clustering (disabled: breaks clicks)" />
                  </div>
                  
                  <div className="section">
@@ -1243,7 +1235,7 @@ export default function App() {
                         <div className="ws-actions" onClick={e => e.stopPropagation()}>
                           <button className="ws-action-btn" onClick={() => exportWorkspace(ws)}>↓ Export</button>
                           <button className="ws-action-btn" onClick={() => shareWorkspace(ws)}>⊕ Share</button>
-                          <button className="ws-action-btn danger" onClick={() => deleteWorkspace(ws.id)}>✕ Delete</button>
+                          <button className="ws-action-btn danger" onClick={() => deleteWorkspace(ws.id)}>X Delete</button>
                         </div>
                       </div>
                     ))
@@ -1662,7 +1654,7 @@ export default function App() {
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ color: "var(--accent)" }}>◈</span>
+                            <span style={{ color: "var(--accent)" }}>S</span>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontWeight: 500, fontSize: 12 }}>{signal.type}</div>
                               <div style={{ fontSize: 11, color: "var(--text-2)" }}>
@@ -1689,7 +1681,7 @@ export default function App() {
                       {selectedSdrSignal.description && <div style={{ marginBottom: 4, marginTop: 8 }}>{selectedSdrSignal.description}</div>}
                       <div style={{ marginTop: 8, color: "var(--text-3)" }}>
                         {selectedSdrSignal.lat && selectedSdrSignal.lon && (
-                          <div>📍 {selectedSdrSignal.lat.toFixed(4)}, {selectedSdrSignal.lon.toFixed(4)}</div>
+                          <div>POS {selectedSdrSignal.lat.toFixed(4)}, {selectedSdrSignal.lon.toFixed(4)}</div>
                         )}
                       </div>
                     </div>
@@ -1821,20 +1813,22 @@ export default function App() {
 
             {/* Feature toggles */}
             {([
-              ["🔄", "Refresh", () => loadData(), false],
-              [globeTheme === "dark" ? "◐" : "◑", "Theme", () => setGlobeTheme(t => t === "dark" ? "light" : "dark"), false],
-              ["🤖", "AI Chat", () => setShowAIChatPanel(p => !p), showAIChatPanel],
-              ["⬡", "Analytics", () => setShowAnalytics(p => !p), showAnalytics],
-              ["⊕", "Entities", () => setShowEntityGraph(p => !p), showEntityGraph],
-              ["⏲", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
-              ["🎤", "Voice", () => setVoiceEnabled(p => !p), voiceEnabled],
-              ["📍", "POI", () => {}, showCollaborators],
-              ["👥", "Collab", () => setShowCollaborators(p => !p), showCollaborators],
-              ["📄", "Report", () => setShowReportPanel(p => !p), showReportPanel],
-              ["📡", "Feed", () => setShowLiveFeed(p => !p), showLiveFeed],
-              ["✏", "Draw", () => setShowDrawTools(p => !p), showDrawTools],
-              ["⌨", "Help", () => setShowHelp(p => !p), showHelp],
-              ["↑", "Share", () => {
+              ["R", "Refresh", () => loadData(), false],
+              [globeTheme === "dark" ? "D" : "L", "Theme", () => setGlobeTheme(t => t === "dark" ? "light" : "dark"), false],
+              ["AI", "AI Chat", () => setShowAIChatPanel(p => !p), showAIChatPanel],
+              ["SDR", "SDR", () => setShowSDRPanel(p => !p), showSDRPanel],
+              ["ANT", "Antenna", () => setShowAntennaPanel(p => !p), showAntennaPanel],
+              ["AN", "Analytics", () => setShowAnalytics(p => !p), showAnalytics],
+              ["EN", "Entities", () => setShowEntityGraph(p => !p), showEntityGraph],
+              ["TM", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
+              ["VC", "Voice", () => setVoiceEnabled(p => !p), voiceEnabled],
+              ["PO", "POI", () => {}, showCollaborators],
+              ["CL", "Collab", () => setShowCollaborators(p => !p), showCollaborators],
+              ["RP", "Report", () => setShowReportPanel(p => !p), showReportPanel],
+              ["FD", "Feed", () => setShowLiveFeed(p => !p), showLiveFeed],
+              ["DW", "Draw", () => setShowDrawTools(p => !p), showDrawTools],
+              ["HM", "Help", () => setShowHelp(p => !p), showHelp],
+              ["SH", "Share", () => {
                 const s = { theme: globeTheme, filters, view: globeEl.current?.pointOfView() };
                 navigator.clipboard.writeText(`${window.location.origin}?s=${btoa(JSON.stringify(s))}`);
                 alert("Share URL copied!");
@@ -1870,7 +1864,7 @@ export default function App() {
                   const el = document.createElement("div");
                   const sev = (d as any).severity;
                   const cat = (d as any).category;
-                  const icon = cat === "air" ? "✈" : cat === "maritime" ? "⛵" : cat === "space" ? "◎" : cat === "cameras" ? "📷" : "●";
+                  const icon = cat === "air" ? "A" : cat === "maritime" ? "M" : cat === "space" ? "S" : cat === "cameras" ? "O" : "P";
                   const color = cat === "air" ? "#22c55e" : cat === "maritime" ? "#3b82f6" : cat === "space" ? "#14b8a6" : cat === "cameras" ? "#06b6d4" : "#ffd700";
                   const size = sev === "critical" ? 14 : sev === "high" ? 12 : 10;
                   el.innerHTML = icon;
@@ -2037,7 +2031,7 @@ pointColor={(d: any) => {
 
           {/* Voice transcript */}
           {voiceEnabled && transcript && (
-            <div className="voice-transcript">🎤 {transcript}</div>
+            <div className="voice-transcript">VC {transcript}</div>
           )}
         </div>
 
@@ -2078,8 +2072,8 @@ pointColor={(d: any) => {
         <div className="panel panel-right">
           <div className="tab-bar">
             {([
-              ["details", "◉", "Details"],
-              ["analytics", "⬡", "Analytics"],
+              ["details", "D", "Details"],
+              ["analytics", "A", "Analytics"],
               ["entities", "⊕", "Entities"],
               ["timeline", "≡", "Timeline"],
             ] as [RightTab, string, string][]).map(([tab, icon, label]) => (
@@ -2105,7 +2099,7 @@ pointColor={(d: any) => {
                         </span>
                       </div>
                     </div>
-                    <button style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: "1rem" }} onClick={() => setSelectedEvent(null)}>✕</button>
+                    <button style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: "1rem" }} onClick={() => setSelectedEvent(null)}>X</button>
                   </div>
 
                   <div className="event-date">{selectedEvent.date}</div>
@@ -2200,7 +2194,7 @@ pointColor={(d: any) => {
                   })()}
                 </div>
               ) : (
-                <EmptyState icon="◉" text="Select an event on the globe" sub="Click any point to inspect it" />
+                <EmptyState icon="D" text="Select an event on the globe" sub="Click any point to inspect it" />
               )
             )}
 
@@ -2345,7 +2339,7 @@ pointColor={(d: any) => {
 
       {/* Analytics overlay */}
       {showAnalytics && (
-        <FloatPanel title="⬡ Deep Analytics" onClose={() => setShowAnalytics(false)} style={{ top: 80, left: 20, width: 400 }}>
+        <FloatPanel title="A Deep Analytics" onClose={() => setShowAnalytics(false)} style={{ top: 80, left: 20, width: 400 }}>
           <div className="stat-card" style={{ marginBottom: 12 }}>
             <div className="stat-num">{analytics.total}</div>
             <div className="stat-sub">Total events · {analytics.avgPerDay}/day avg</div>
@@ -2408,12 +2402,12 @@ pointColor={(d: any) => {
 
       {/* Report panel */}
       {showReportPanel && (
-        <FloatPanel title="📄 Generate Report" onClose={() => setShowReportPanel(false)} style={{ top: 80, right: 20, width: 340 }}>
+        <FloatPanel title="R Generate Report" onClose={() => setShowReportPanel(false)} style={{ top: 80, right: 20, width: 340 }}>
           <SectionLabel>Report Type</SectionLabel>
           <div className="report-grid">
             {(["summary", "detailed", "analytics"] as ReportType[]).map(t => (
               <button key={t} className={cls("report-btn", reportType === t && "active")} onClick={() => setReportType(t)}>
-                <div className="report-btn-icon">{t === "summary" ? "◉" : t === "detailed" ? "≡" : "⬡"}</div>
+                <div className="report-btn-icon">{t === "summary" ? "S" : t === "detailed" ? "D" : "A"}</div>
                 <div className="report-btn-label">{t}</div>
               </button>
             ))}
@@ -2431,12 +2425,12 @@ pointColor={(d: any) => {
 
       {/* Draw tools */}
       {showDrawTools && (
-        <FloatPanel title="✏ Drawing Tools" onClose={() => setShowDrawTools(false)} style={{ top: 80, left: 20, width: 300 }}>
+        <FloatPanel title="D Drawing Tools" onClose={() => setShowDrawTools(false)} style={{ top: 80, left: 20, width: 300 }}>
           <SectionLabel>Mode</SectionLabel>
           <div className="draw-grid">
             {(["none", "circle", "polygon", "line"] as DrawMode[]).map(m => (
               <button key={m} className={cls("draw-btn", drawMode === m && "active")} onClick={() => setDrawMode(m)}>
-                <div className="draw-btn-icon">{m === "none" ? "↑" : m === "circle" ? "○" : m === "polygon" ? "⬡" : "→"}</div>
+                <div className="draw-btn-icon">{m === "none" ? "N" : m === "circle" ? "C" : m === "polygon" ? "P" : "L"}</div>
                 <div className="draw-btn-label">{m === "none" ? "select" : m}</div>
               </button>
             ))}
@@ -2453,7 +2447,7 @@ pointColor={(d: any) => {
               {drawnShapes.map(s => (
                 <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-2)" }}>{s.type} · {s.points.length}pts</span>
-                  <button style={{ background: "none", border: "none", color: "var(--red)", cursor: "pointer", fontSize: "0.8rem" }} onClick={() => setDrawnShapes(x => x.filter(y => y.id !== s.id))}>✕</button>
+                  <button style={{ background: "none", border: "none", color: "var(--red)", cursor: "pointer", fontSize: "0.8rem" }} onClick={() => setDrawnShapes(x => x.filter(y => y.id !== s.id))}>X</button>
                 </div>
               ))}
             </>
@@ -2487,7 +2481,7 @@ pointColor={(d: any) => {
 
       {/* Collaboration */}
       {showCollaborators && (
-        <FloatPanel title="👥 Collaboration" onClose={() => setShowCollaborators(false)} style={{ top: 80, right: showRightPanel ? 340 : 20, width: 280 }}>
+        <FloatPanel title="C Collaboration" onClose={() => setShowCollaborators(false)} style={{ top: 80, right: showRightPanel ? 340 : 20, width: 280 }}>
           {!collaborationRoom ? (
             <>
               <div style={{ marginBottom: 10 }}>
@@ -2526,7 +2520,7 @@ pointColor={(d: any) => {
               <span className="live-dot" style={{ background: "var(--red)", boxShadow: "0 0 6px var(--red)" }} />
               <span className="float-title">Live Incidents</span>
             </div>
-            <button className="float-close" onClick={() => setShowLiveFeed(false)}>✕</button>
+            <button className="float-close" onClick={() => setShowLiveFeed(false)}>X</button>
           </div>
           <div style={{ overflow: "auto", maxHeight: 280, padding: "10px 14px" }}>
             {liveFeedItems.length === 0 ? (
@@ -2556,16 +2550,16 @@ pointColor={(d: any) => {
         <div className="float-panel" style={{ right: 20, bottom: 90, width: 380, height: 520 }}>
           <div className="float-header" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "1.2rem" }}>🤖</span>
+              <span style={{ fontSize: "1.2rem" }}>AI</span>
               <span className="float-title" style={{ color: "#fff" }}>AI Assistant</span>
             </div>
-            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowAIChatPanel(false)}>✕</button>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowAIChatPanel(false)}>X</button>
           </div>
           <div className="float-body" style={{ padding: 0, display: "flex", flexDirection: "column", height: "calc(100% - 50px)" }}>
             <div style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               {aiChatMessages.length === 0 && (
                 <div style={{ textAlign: "center", color: "var(--text-3)", padding: "30px 20px" }}>
-                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>🤖</div>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>AI</div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
                     Ask me about conflicts, signals, or any OSINT data.<br/>
                     I can analyze patterns and provide insights.
@@ -2641,6 +2635,167 @@ pointColor={(d: any) => {
         </div>
       )}
 
+      {/* Dedicated SDR Panel */}
+      {showSDRPanel && (
+        <div className="float-panel" style={{ right: 20, bottom: 90, width: 360, height: 480 }}>
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #f97316 0%, #c2410c 100%)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.2rem" }}>SDR</span>
+              <span className="float-title" style={{ color: "#fff" }}>SDR Radio Signals</span>
+            </div>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowSDRPanel(false)}>X</button>
+          </div>
+          <div className="float-body" style={{ padding: 0, display: "flex", flexDirection: "column", height: "calc(100% - 50px)" }}>
+            <div style={{ padding: 12, borderBottom: "1px solid var(--border)", display: "flex", gap: 10, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <label style={{ fontSize: "0.75rem", color: "var(--text-2)" }}>Freq:</label>
+                <input 
+                  type="number" 
+                  value={sdrFrequency} 
+                  onChange={e => setSdrFrequency(+e.target.value)}
+                  style={{ width: 80, padding: "6px 8px", background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontSize: "0.8rem" }}
+                />
+                <span style={{ fontSize: "0.7rem", color: "var(--text-3)" }}>kHz</span>
+              </div>
+              <select value={sdrMode} onChange={e => setSdrMode(e.target.value)} style={{ padding: "6px 8px", background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text)", fontSize: "0.75rem" }}>
+                <option value="USB">USB</option>
+                <option value="LSB">LSB</option>
+                <option value="CW">CW</option>
+                <option value="AM">AM</option>
+                <option value="FM">FM</option>
+              </select>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", padding: 10 }}>
+              {sdrSignals.length === 0 ? (
+                <div style={{ textAlign: "center", color: "var(--text-3)", padding: "30px 20px", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
+                  No signals detected.<br/>Configure SDR source in settings.
+                </div>
+              ) : sdrSignals.map(signal => (
+                <div 
+                  key={signal.id}
+                  style={{ 
+                    padding: "10px 12px", 
+                    marginBottom: 6, 
+                    background: selectedSdrSignal?.id === signal.id ? "var(--accent-lo)" : "var(--surface1)",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    borderLeft: "3px solid var(--accent)"
+                  }}
+                  onClick={() => {
+                    setSelectedSdrSignal(signal);
+                    if (signal.lat && signal.lon && globeEl.current) {
+                      (globeEl.current as any).pointOfView({ lat: signal.lat, lng: signal.lon, altitude: 0.5 }, 1500);
+                    }
+                  }}
+                >
+                  <div style={{ fontWeight: 500, fontSize: "0.85rem", color: "var(--text)" }}>{signal.type}</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-2)", marginTop: 4 }}>
+                    {signal.frequency ? `${signal.frequency} kHz` : ""} {signal.power ? ` | ${signal.power} dBm` : ""}
+                  </div>
+                  {signal.lat && signal.lon && (
+                    <div style={{ fontSize: "0.68rem", color: "var(--text-3)", marginTop: 4 }}>
+                      POS: {signal.lat.toFixed(4)}, {signal.lon.toFixed(4)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated Antenna Agent Panel */}
+      {showAntennaPanel && (
+        <div className="float-panel" style={{ right: 20, bottom: 90, width: 380, height: 520 }}>
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.2rem" }}>ANT</span>
+              <span className="float-title" style={{ color: "#fff" }}>Antenna Agent</span>
+            </div>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowAntennaPanel(false)}>X</button>
+          </div>
+          <div className="float-body" style={{ padding: 0, display: "flex", flexDirection: "column", height: "calc(100% - 50px)" }}>
+            <div style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+              {antennaChatMessages.length === 0 && (
+                <div style={{ textAlign: "center", color: "var(--text-3)", padding: "30px 20px" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>ANT</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
+                    Antenna Agent can analyze SDR signals and provide insights.<br/>
+                    Ask about signal patterns or threat analysis.
+                  </div>
+                </div>
+              )}
+              {antennaChatMessages.map((msg, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                  <div style={{ 
+                    maxWidth: "80%", 
+                    padding: "10px 14px", 
+                    borderRadius: 12,
+                    background: msg.role === "user" ? "var(--accent)" : "#8b5cf620",
+                    color: msg.role === "user" ? "#fff" : "var(--text)",
+                    fontSize: "0.82rem",
+                    lineHeight: 1.5,
+                    border: msg.role === "assistant" ? "1px solid #8b5cf6" : "none",
+                  }}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {antennaChatLoading && (
+                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                  <div style={{ 
+                    padding: "10px 14px", 
+                    borderRadius: 12,
+                    background: "#8b5cf620",
+                    color: "var(--text-3)",
+                    fontSize: "0.82rem",
+                    fontStyle: "italic",
+                    border: "1px solid #8b5cf6",
+                  }}>
+                    Processing signal analysis...
+                  </div>
+                </div>
+              )}
+              <div ref={(el) => { if (el) el.scrollIntoView({ behavior: "smooth" }); }} />
+            </div>
+            <div style={{ padding: 14, borderTop: "1px solid var(--border)", display: "flex", gap: 8 }}>
+              <input 
+                type="text" 
+                placeholder="Analyze signals, ask about patterns..." 
+                style={{ 
+                  flex: 1, 
+                  padding: "10px 14px", 
+                  border: "1px solid var(--border)", 
+                  borderRadius: 8, 
+                  background: "var(--surface2)", 
+                  color: "var(--text)",
+                  fontSize: "0.85rem",
+                }}
+                value={antennaChatInput}
+                onChange={e => setAntennaChatInput(e.target.value)}
+                onKeyPress={e => {
+                  if (e.key === "Enter" && antennaChatInput.trim()) {
+                    sendAntennaMessage(antennaChatInput);
+                    setAntennaChatInput("");
+                  }
+                }}
+              />
+              <button 
+                className="full-btn"
+                style={{ padding: "10px 16px", borderRadius: 8, background: "#8b5cf6", color: "#fff" }}
+                onClick={() => {
+                  sendAntennaMessage(antennaChatInput);
+                  setAntennaChatInput("");
+                }}
+                disabled={antennaChatLoading || !antennaChatInput.trim()}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Camera Viewer Modal ── */}
       {cameraViewer && (
         <div style={{
@@ -2670,7 +2825,7 @@ pointColor={(d: any) => {
                 </a>
                 <button onClick={() => setCameraViewer(null)}
                   style={{ padding: "6px 12px", background: "#1e293b", color: "#fff", border: "none", borderRadius: 6, fontSize: "0.72rem", cursor: "pointer" }}>
-                  ✕
+                  X
                 </button>
               </div>
             </div>
