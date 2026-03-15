@@ -21,6 +21,7 @@ import { fetchFlightData, fetchMilitaryFlights, fetchAirspaceAlerts, fetchDroneZ
 import { fetchCityBuildings, fetchCityDensityPoints, fetchUrbanExtents } from "../services/city";
 import { fetchWikidataConflicts, fetchWikidataLocations } from "../services/wikidata";
 import { fetchAntennaSignals, fetchAntennaStatus } from "../services/antenna";
+import { chatWithOllama } from "../services/aiChatService";
 
 const router = Router();
 
@@ -225,6 +226,22 @@ router.get("/cache/status", (_req, res) => {
     status[k] = { age: Math.round((Date.now() - v.ts) / 1000) + "s", events: v.data?.length || 0 };
   });
   res.json(status);
+});
+
+// AI Chat endpoint
+router.post("/ai/chat", async (req, res) => {
+  try {
+    const { message, history } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+    
+    const response = await chatWithOllama(message, history || []);
+    res.json({ response });
+  } catch (error) {
+    console.error("AI chat error:", error);
+    res.status(500).json({ error: "Failed to process AI chat request" });
+  }
 });
 
 export default router;

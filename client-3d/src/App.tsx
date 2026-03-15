@@ -67,10 +67,11 @@ interface LayerState {
   showCityBuildings: boolean;
   showCityDensity: boolean;
   showUrbanExtents: boolean;
+  showSDR: boolean;
 }
 
 type GlobeTheme = "dark" | "light" | "satellite" | "terrain";
-type LeftTab = "layers" | "categories" | "filters" | "import" | "settings";
+type LeftTab = "layers" | "categories" | "filters" | "import" | "settings" | "aiChat";
 type RightTab = "details" | "analytics" | "entities" | "timeline";
 type ReportType = "summary" | "detailed" | "analytics";
 type DrawMode = "none" | "circle" | "polygon" | "line";
@@ -234,73 +235,16 @@ export default function App() {
   }, []);
 
   // UI state
-  const [showLeftPanel, setShowLeftPanel] = useState(true);
-  const [showRightPanel, setShowRightPanel] = useState(true);
-  const [showBottomPanel, setShowBottomPanel] = useState(true);
   const [activeLeftTab, setActiveLeftTab] = useState<LeftTab>("layers");
   const [activeRightTab, setActiveRightTab] = useState<RightTab>("details");
   const [selectedEvent, setSelectedEvent] = useState<ConflictEvent | null>(null);
-  const [hoveredEvent, setHoveredEvent] = useState<ConflictEvent | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Search
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-
-  // Timeline
-  const [timelinePosition, setTimelinePosition] = useState(100);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-
-  // Auto-refresh
-  const [autoRefresh] = useState(true);
-  const [refreshInterval] = useState(60);
-
-  // Workspaces
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [currentWorkspace, setCurrentWorkspace] = useState<string | null>(null);
-
-  // API Keys (stored in localStorage)
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem("cg_apiKeys");
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
-  useEffect(() => { localStorage.setItem("cg_apiKeys", JSON.stringify(apiKeys)); }, [apiKeys]);
-
-  // Feature panels
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showEntityGraph, setShowEntityGraph] = useState(false);
-  const [showTimeMachine, setShowTimeMachine] = useState(false);
-  const [showReportPanel, setShowReportPanel] = useState(false);
-  const [showLiveFeed, setShowLiveFeed] = useState(true);
-  const [showDrawTools, setShowDrawTools] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [showCollaborators, setShowCollaborators] = useState(false);
-
-  // Voice
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [transcript, setTranscript] = useState("");
-
-  // Time machine
-  const [historicalDate, setHistoricalDate] = useState<Date>(new Date());
-  const [timeLapseMode, setTimeLapseMode] = useState(false);
-
-  // Report
-  const [reportType, setReportType] = useState<ReportType>("summary");
-
-  // Draw
-  const [drawMode, setDrawMode] = useState<DrawMode>("none");
-  const [drawnShapes, setDrawnShapes] = useState<{ id: string; type: string; points: [number, number][]; color: string }[]>([]);
-
-  // Collaboration
-  const [collaborators, setCollaborators] = useState<{ id: string; name: string; color: string; lat: number; lng: number }[]>([]);
-  const [username, setUsername] = useState(() => `ANALYST-${Math.random().toString(36).substr(2, 4).toUpperCase()}`);
-  const [collaborationRoom, setCollaborationRoom] = useState<string | null>(null);
+  const [showLeftPanel, setShowLeftPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
+  const [showBottomPanel, setShowBottomPanel] = useState(false);
   const [roomInput, setRoomInput] = useState("");
+  const [aiChatInput, setAIChatInput] = useState("");
+  const [aiChatMessages, setAIChatMessages] = useState<{role: string, content: string}[]>([]);
+  const [aiChatLoading, setAIChatLoading] = useState(false);
 
   // Live feed
   const [liveFeedItems, setLiveFeedItems] = useState<{ id: string; time: Date; message: string; type: string; severity: string }[]>([]);
@@ -342,6 +286,14 @@ export default function App() {
   useEffect(() => { localStorage.setItem("cg_bookmarks", JSON.stringify(bookmarks)); }, [bookmarks]);
   useEffect(() => { localStorage.setItem("cg_alerts", JSON.stringify(alerts)); }, [alerts]);
   useEffect(() => { localStorage.setItem("cg_workspaces", JSON.stringify(workspaces)); }, [workspaces]);
+
+  // ── AI Chat auto-scroll ──
+  useEffect(() => {
+    const container = document.getElementById("ai-chat-messages");
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [aiChatMessages]);
 
   // ── Mobile detection ──
   useEffect(() => {
@@ -468,7 +420,67 @@ export default function App() {
     };
     rec.start();
     return () => rec.stop();
-  }, [voiceEnabled]); // eslint-disable-line
+  }, [voiceEnabled]);
+
+  // ── AI Chat handling ──
+  useEffect(() => {
+    const input = document.getElementById("ai-chat-input");
+    const sendBtn = document.getElementById("ai-chat-send");
+    
+    const handleSend = async () => {
+      const message = aiChatInput.trim();
+      if (!message) return;
+      
+      setAIChatLoading(true);
+      setAIChatInput("");
+      
+      // Add user message to chat
+      setAIChatMessages(prev => [...prev, { role: "user", content: message }]);
+      
+      try {
+        const response = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message,
+            history: aiChatMessages
+          })
+        });
+        
+        const data = await response.json();
+        if (data.response) {
+          setAIChatMessages(prev => [...prev, { role: "assistant", content: data.response }]);
+        }
+      } catch (error) {
+        console.error("AI chat error:", error);
+        setAIChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
+      } finally {
+        setAIChatLoading(false);
+      }
+    };
+    
+    if (sendBtn) {
+      sendBtn.removeEventListener("click", handleSend);
+      sendBtn.addEventListener("click", handleSend);
+    }
+    
+    if (input) {
+      input.removeEventListener("keypress", handleEnter);
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleSend();
+        }
+      });
+    }
+    
+    return () => {
+      if (sendBtn) sendBtn.removeEventListener("click", handleSend);
+      if (input) input.removeEventListener("keypress", handleEnter);
+    };
+  }, [aiChatInput, aiChatMessages]); // eslint-disable-line
 
   // ── Helpers ──
   const checkAlerts = useCallback((currentEvents: ConflictEvent[]) => {
@@ -896,35 +908,50 @@ export default function App() {
                   )}
                 </div>
 
-                <div className="section">
-                  <SectionLabel>Data Layers</SectionLabel>
-                  <CheckRow checked={layers.showHexBin} onChange={v => setLayer("showHexBin", v)} icon="⬡" label="Heat Clusters" />
-                  <CheckRow checked={layers.showRings} onChange={v => setLayer("showRings", v)} icon="◎" label="Pulse Rings" />
-                  <CheckRow checked={layers.showHeatmap} onChange={v => setLayer("showHeatmap", v)} icon="▣" label="Density Map" />
-                  <CheckRow checked={layers.showArcs} onChange={v => setLayer("showArcs", v)} icon="◜◝" label="Connections" />
-                  <CheckRow checked={layers.showPaths} onChange={v => setLayer("showPaths", v)} icon="→" label="Movement" />
-                  <CheckRow checked={layers.showPolygons} onChange={v => setLayer("showPolygons", v)} icon="⬡" label="Regions" />
-                </div>
+                 <div className="section">
+                   <SectionLabel>Data Layers</SectionLabel>
+                   <CheckRow checked={layers.showHexBin} onChange={v => setLayer("showHexBin", v)} icon="⬡" label="Heat Clusters" />
+                   <CheckRow checked={layers.showRings} onChange={v => setLayer("showRings", v)} icon="◎" label="Pulse Rings" />
+                   <CheckRow checked={layers.showHeatmap} onChange={v => setLayer("showHeatmap", v)} icon="▣" label="Density Map" />
+                   <CheckRow checked={layers.showArcs} onChange={v => setLayer("showArcs", v)} icon="◜◝" label="Connections" />
+                   <CheckRow checked={layers.showPaths} onChange={v => setLayer("showPaths", v)} icon="→" label="Movement" />
+                   <CheckRow checked={layers.showPolygons} onChange={v => setLayer("showPolygons", v)} icon="⬡" label="Regions" />
+                   <CheckRow checked={layers.showSDR} onChange={v => setLayer("showSDR", v)} icon="📻" label="SDR Signals" />
+                 </div>
 
-                <div className="section">
-                  <SectionLabel>Performance</SectionLabel>
-                  <div className="quality-group" style={{ marginBottom: 12 }}>
-                    {(["low", "medium", "high"] as const).map(q => (
-                      <button key={q} className={cls("quality-btn", pointQuality === q && "active")} onClick={() => setPointQuality(q)}>{q}</button>
-                    ))}
-                  </div>
-                  <div className="range-row">
-                    <div className="range-label"><span>Max Points</span><span>{maxPoints}</span></div>
-                    <input type="range" min={50} max={5000} step={50} value={maxPoints} onChange={e => setMaxPoints(+e.target.value)} />
-                  </div>
-                  <div className="range-row">
-                    <div className="range-label"><span>Point Size</span><span>{pointSize}</span></div>
-                    <input type="range" min={1} max={10} value={pointSize} onChange={e => setPointSize(+e.target.value)} />
-                  </div>
-                  <CheckRow checked={enableClustering} onChange={v => setEnableClustering(v)} icon="◈" label="Point Clustering (disabled: breaks clicks)" />
-                </div>
-              </>
-            )}
+                 <div className="section">
+                   <SectionLabel>Performance</SectionLabel>
+                   <div className="quality-group" style={{ marginBottom: 12 }}>
+                     {(["low", "medium", "high"] as const).map(q => (
+                       <button key={q} className={cls("quality-btn", pointQuality === q && "active")} onClick={() => setPointQuality(q)}>{q}</button>
+                     ))}
+                   </div>
+                   <div className="range-row">
+                     <div className="range-label"><span>Max Points</span><span>{maxPoints}</span></div>
+                     <input type="range" min={50} max={5000} step={50} value={maxPoints} onChange={e => setMaxPoints(+e.target.value)} />
+                   </div>
+                   <div className="range-row">
+                     <div className="range-label"><span>Point Size</span><span>{pointSize}</span></div>
+                     <input type="range" min={1} max={10} value={pointSize} onChange={e => setPointSize(+e.target.value)} />
+                   </div>
+                   <CheckRow checked={enableClustering} onChange={v => setEnableClustering(v)} icon="◈" label="Point Clustering (disabled: breaks clicks)" />
+                 </div>
+                 
+                 <div className="section">
+                   <SectionLabel>AI Chat</SectionLabel>
+                   <div id="ai-chat-container" style={{ height: 300, overflow: "auto", padding: "10px", background: "var(--surface)", borderRadius: 6, marginBottom: 10 }}>
+                     {/* AI Chat messages will be rendered here */}
+                     <div id="ai-chat-messages" style={{ minHeight: 200 }}>
+                       {/* Messages will be appended here */}
+                     </div>
+                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                       <input type="text" id="ai-chat-input" placeholder="Ask the AI about conflicts, signals, or anything..." style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, background: "var(--surface2)", color: "var(--text)" }} />
+                       <button id="ai-chat-send" className="full-btn full-btn-primary" style={{ padding: "8px 16px", fontSize: "0.875rem" }}>Send</button>
+                     </div>
+                   </div>
+                 </div>
+               </>
+             )}
 
             {/* ── Categories tab ── */}
             {activeLeftTab === "categories" && (
@@ -1496,16 +1523,44 @@ export default function App() {
                 pointsData={validEvents}
                 pointLat={(d: any) => d.lat}
                 pointLng={(d: any) => d.lon}
-                pointColor={(d: any) => {
-                  // Hide dot for categories that use HTML icons
-                  if (["air","maritime","space","cameras"].includes(d.category)) return "rgba(0,0,0,0)";
-                  const sev = d.severity;
-                  const base = CATEGORY_COLORS[d.category] || "#ffd700";
-                  if (sev === "critical") return "#ef4444";
-                  if (sev === "high") return "#f97316";
-                  if (sev === "low") return base + "99";
-                  return base;
-                }}
+pointColor={(d: any) => {
+                    const sev = (d as any).severity;
+                    const cat = (d as any).category;
+                    let color = "#ffd700";
+                    if (cat === "air") {
+                      color = "#22c55e";
+                    } else if (cat === "maritime") {
+                      color = "#3b82f6";
+                    } else if (cat === "space") {
+                      color = "#14b8a6";
+                    } else if (cat === "cameras") {
+                      color = "#06b6d4";
+                    } else if (cat === "radio") {
+                      // Check if it's an SDR signal
+                      if ((d as any).frequency !== undefined || (d as any).signalType !== undefined) {
+                        color = "#ff6b6d"; // Reddish-orange for SDR
+                      } else {
+                        color = "#eab308"; // Default radio color
+                      }
+                    } else if (cat === "conflict") {
+                        color = "#ef4444";
+                    } else if (cat === "cyber") {
+                        color = "#a855f7";
+                    } else if (cat === "land") {
+                        color = "#f97316";
+                    } else if (cat === "weather") {
+                        color = "#60a5fa";
+                    } else if (cat === "earthquakes") {
+                        color = "#9333ea";
+                    } else if (cat === "social") {
+                        color = "#ec4899";
+                    }
+                    
+                    if (sev === "critical") return "#ef4444";
+                    if (sev === "high") return "#f97316";
+                    if (sev === "low") return color + "99";
+                    return color;
+                  }}
                 pointAltitude={0.005}
                 pointRadius={(d: any) => {
                   const sev = (d as any).severity;
