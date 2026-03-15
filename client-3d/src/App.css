@@ -115,19 +115,20 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px;
   background: rgba(10,15,28,0.9); 
   border: 1px solid var(--border); 
   border-radius: var(--radius-sm); 
-  min-width: 42px; 
+  min-width: 48px; 
   height: 38px; 
   display: flex; 
   align-items: center; 
   justify-content: center; 
   cursor: pointer; 
-  font-size: 0.65rem; 
+  font-size: 0.55rem; 
   font-family: var(--font-mono);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-2); 
   transition: all 0.2s ease; 
   backdrop-filter: blur(12px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  padding: 0 6px;
 }
 .icon-btn:hover { 
   border-color: var(--accent); 
@@ -142,7 +143,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px;
   box-shadow: 0 0 16px var(--accent-glow), inset 0 0 8px var(--accent-lo);
 }
 .icon-btn-label { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.icon-btn-sub { font-family: var(--font-mono); font-size: 0.42rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+.icon-btn-sub { font-family: var(--font-mono); font-size: 0.38rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
 
 .panel-toggle { background: rgba(12,17,32,0.85); border: 1px solid var(--border); border-radius: 6px; padding: 6px 11px; display: flex; align-items: center; gap: 7px; cursor: pointer; font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-3); letter-spacing: 0.5px; transition: all 0.15s; backdrop-filter: blur(8px); }
 .panel-toggle:hover { color: var(--text-2); border-color: var(--border-hi); }

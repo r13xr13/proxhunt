@@ -22,6 +22,8 @@ import { fetchCityBuildings, fetchCityDensityPoints, fetchUrbanExtents } from ".
 import { fetchWikidataConflicts, fetchWikidataLocations } from "../services/wikidata";
 import { fetchAntennaSignals, fetchAntennaStatus } from "../services/antenna";
 import { chatWithAI, chatWithOllama } from "../services/aiChatService";
+import { fetchFiresData, fetchModisFires } from "../services/fires";
+import { fetchLiveUAMapData, fetchAllLiveUAMapRegions } from "../services/liveuamap";
 
 const router = Router();
 
@@ -69,6 +71,11 @@ async function getConflictEvents(): Promise<EventData[]> {
       fetchTelegramChannels(),
       fetchAllScrapedData(),
       fetchWikidataConflicts(),
+      // New data sources
+      fetchFiresData(),
+      fetchModisFires(),
+      fetchLiveUAMapData(),
+      fetchAllLiveUAMapRegions(),
     ]);
     return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
   });

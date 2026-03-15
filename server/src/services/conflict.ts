@@ -8,7 +8,7 @@ export interface EventData {
   type: string;
   description: string;
   source: string;
-  category: "conflict" | "maritime" | "air" | "cyber" | "land" | "space" | "radio" | "weather" | "earthquakes" | "social" | "cameras";
+  category: "conflict" | "maritime" | "air" | "cyber" | "land" | "space" | "radio" | "weather" | "earthquakes" | "social" | "cameras" | "fire";
   endLat?: number;
   endLon?: number;
   severity?: "low" | "medium" | "high" | "critical";

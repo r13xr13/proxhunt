@@ -71,7 +71,7 @@ interface LayerState {
 }
 
 type GlobeTheme = "dark" | "light" | "satellite" | "terrain";
-type LeftTab = "layers" | "categories" | "filters" | "import" | "settings" | "aiChat" | "sdr";
+type LeftTab = "layers" | "categories" | "filters" | "import" | "settings";
 type RightTab = "details" | "analytics" | "entities" | "timeline";
 type ReportType = "summary" | "detailed" | "analytics";
 type DrawMode = "none" | "circle" | "polygon" | "line";
@@ -82,13 +82,13 @@ type TileLayerKey = keyof typeof TILE_LAYERS;
 const CATEGORY_ICONS: Record<string, string> = {
   conflict: "C", maritime: "M", air: "A", cyber: "X",
   land: "L", space: "S", radio: "R", weather: "W",
-  earthquakes: "Q", social: "S", cameras: "O",
+  earthquakes: "Q", social: "S", cameras: "O", fire: "F",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
   conflict: "#ef4444", maritime: "#3b82f6", air: "#22c55e", cyber: "#a855f7",
   land: "#f97316", space: "#14b8a6", radio: "#eab308", weather: "#60a5fa",
-  earthquakes: "#9333ea", social: "#ec4899", cameras: "#06b6d4",
+  earthquakes: "#9333ea", social: "#ec4899", cameras: "#06b6d4", fire: "#ff4500",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -235,6 +235,51 @@ export default function App() {
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [showBottomPanel, setShowBottomPanel] = useState(false);
   const [roomInput, setRoomInput] = useState("");
+  
+  // Floating panel positions (for draggable panels)
+  const [aiChatPosition, setAiChatPosition] = useState({ x: 20, y: 90 });
+  const [sdrPosition, setSdrPosition] = useState({ x: 20, y: 90 });
+  const [antennaPosition, setAntennaPosition] = useState({ x: 20, y: 90 });
+  const [analyticsPosition, setAnalyticsPosition] = useState({ x: 20, y: 90 });
+  const [liveFeedPosition, setLiveFeedPosition] = useState({ x: 20, y: 90 });
+  
+  // Dragging state
+  const [draggingPanel, setDraggingPanel] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  
+  const handleDragStart = (panelId: string, e: React.MouseEvent) => {
+    setDraggingPanel(panelId);
+    setDragOffset({ x: e.clientX, y: e.clientY });
+  };
+  
+  const handleDragMove = (e: MouseEvent) => {
+    if (!draggingPanel) return;
+    const dx = e.clientX - dragOffset.x;
+    const dy = e.clientY - dragOffset.y;
+    setDragOffset({ x: e.clientX, y: e.clientY });
+    
+    if (draggingPanel === 'aiChat') setAiChatPosition(p => ({ x: p.x + dx, y: p.y + dy }));
+    else if (draggingPanel === 'sdr') setSdrPosition(p => ({ x: p.x + dx, y: p.y + dy }));
+    else if (draggingPanel === 'antenna') setAntennaPosition(p => ({ x: p.x + dx, y: p.y + dy }));
+    else if (draggingPanel === 'analytics') setAnalyticsPosition(p => ({ x: p.x + dx, y: p.y + dy }));
+    else if (draggingPanel === 'liveFeed') setLiveFeedPosition(p => ({ x: p.x + dx, y: p.y + dy }));
+  };
+  
+  const handleDragEnd = () => {
+    setDraggingPanel(null);
+  };
+  
+  // Add global mouse event listeners for dragging
+  useEffect(() => {
+    if (draggingPanel) {
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      return () => {
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+      };
+    }
+  }, [draggingPanel]);
   
   // AI Chat state
   const [aiChatInput, setAIChatInput] = useState("");
@@ -1008,11 +1053,12 @@ export default function App() {
 
           <div className="tab-bar">
              {([
-               ["layers", "⊞", "Layers"],
-["categories", "C", "Categories"],
-               ["aiChat", "AI", "AI Chat"],
-               ["sdr", "SDR", "SDR Radio"],
-             ] as [LeftTab, string, string][]).map(([tab, icon, label]) => (
+                ["layers", "LYR", "Layers"],
+                ["categories", "CAT", "Categories"],
+                ["filters", "FLT", "Filters"],
+                ["import", "IMP", "Import"],
+                ["settings", "CFG", "Settings"],
+              ] as [LeftTab, string, string][]).map(([tab, icon, label]) => (
               <button key={tab} className={cls("tab-btn", activeLeftTab === tab && "active")} onClick={() => setActiveLeftTab(tab)}>
                 <span className="tab-icon">{icon}</span>
                 {label}
@@ -1813,22 +1859,22 @@ export default function App() {
 
             {/* Feature toggles */}
             {([
-              ["R", "Refresh", () => loadData(), false],
-              [globeTheme === "dark" ? "D" : "L", "Theme", () => setGlobeTheme(t => t === "dark" ? "light" : "dark"), false],
+              ["RFSH", "Refresh", () => loadData(), false],
+              [globeTheme === "dark" ? "DRK" : "LIT", "Theme", () => setGlobeTheme(t => t === "dark" ? "light" : "dark"), false],
               ["AI", "AI Chat", () => setShowAIChatPanel(p => !p), showAIChatPanel],
               ["SDR", "SDR", () => setShowSDRPanel(p => !p), showSDRPanel],
               ["ANT", "Antenna", () => setShowAntennaPanel(p => !p), showAntennaPanel],
-              ["AN", "Analytics", () => setShowAnalytics(p => !p), showAnalytics],
-              ["EN", "Entities", () => setShowEntityGraph(p => !p), showEntityGraph],
-              ["TM", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
-              ["VC", "Voice", () => setVoiceEnabled(p => !p), voiceEnabled],
-              ["PO", "POI", () => {}, showCollaborators],
-              ["CL", "Collab", () => setShowCollaborators(p => !p), showCollaborators],
-              ["RP", "Report", () => setShowReportPanel(p => !p), showReportPanel],
-              ["FD", "Feed", () => setShowLiveFeed(p => !p), showLiveFeed],
-              ["DW", "Draw", () => setShowDrawTools(p => !p), showDrawTools],
-              ["HM", "Help", () => setShowHelp(p => !p), showHelp],
-              ["SH", "Share", () => {
+              ["DATA", "Analytics", () => setShowAnalytics(p => !p), showAnalytics],
+              ["NET", "Network", () => setShowEntityGraph(p => !p), showEntityGraph],
+              ["TIME", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
+              ["VOICE", "Voice", () => setVoiceEnabled(p => !p), voiceEnabled],
+              ["MARK", "Markers", () => {}, showCollaborators],
+              ["TEAM", "Team", () => setShowCollaborators(p => !p), showCollaborators],
+              ["RPT", "Report", () => setShowReportPanel(p => !p), showReportPanel],
+              ["LIVE", "Feed", () => setShowLiveFeed(p => !p), showLiveFeed],
+              ["DRAW", "Draw", () => setShowDrawTools(p => !p), showDrawTools],
+              ["HELP", "Help", () => setShowHelp(p => !p), showHelp],
+              ["SHR", "Share", () => {
                 const s = { theme: globeTheme, filters, view: globeEl.current?.pointOfView() };
                 navigator.clipboard.writeText(`${window.location.origin}?s=${btoa(JSON.stringify(s))}`);
                 alert("Share URL copied!");
@@ -2072,10 +2118,10 @@ pointColor={(d: any) => {
         <div className="panel panel-right">
           <div className="tab-bar">
             {([
-              ["details", "D", "Details"],
-              ["analytics", "A", "Analytics"],
-              ["entities", "⊕", "Entities"],
-              ["timeline", "≡", "Timeline"],
+              ["details", "EVT", "Event"],
+              ["analytics", "ANA", "Analytics"],
+              ["entities", "NET", "Network"],
+              ["timeline", "TML", "Timeline"],
             ] as [RightTab, string, string][]).map(([tab, icon, label]) => (
               <button key={tab} className={cls("tab-btn", activeRightTab === tab && "active")} onClick={() => setActiveRightTab(tab)}>
                 <span className="tab-icon">{icon}</span>
@@ -2547,8 +2593,18 @@ pointColor={(d: any) => {
 
       {/* Dedicated AI Chat Panel */}
       {showAIChatPanel && (
-        <div className="float-panel" style={{ right: 20, bottom: 90, width: 380, height: 520 }}>
-          <div className="float-header" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)" }}>
+        <div 
+          className="float-panel" 
+          style={{ 
+            left: aiChatPosition.x, 
+            top: aiChatPosition.y, 
+            width: 380, 
+            height: 520,
+            cursor: draggingPanel === 'aiChat' ? 'grabbing' : 'grab',
+          }}
+          onMouseDown={(e) => handleDragStart('aiChat', e)}
+        >
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)", cursor: 'grab' }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: "1.2rem" }}>AI</span>
               <span className="float-title" style={{ color: "#fff" }}>AI Assistant</span>
@@ -2637,8 +2693,18 @@ pointColor={(d: any) => {
 
       {/* Dedicated SDR Panel */}
       {showSDRPanel && (
-        <div className="float-panel" style={{ right: 20, bottom: 90, width: 360, height: 480 }}>
-          <div className="float-header" style={{ background: "linear-gradient(135deg, #f97316 0%, #c2410c 100%)" }}>
+        <div 
+          className="float-panel" 
+          style={{ 
+            left: sdrPosition.x, 
+            top: sdrPosition.y, 
+            width: 360, 
+            height: 480,
+            cursor: draggingPanel === 'sdr' ? 'grabbing' : 'grab',
+          }}
+          onMouseDown={(e) => handleDragStart('sdr', e)}
+        >
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #f97316 0%, #c2410c 100%)", cursor: 'grab' }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: "1.2rem" }}>SDR</span>
               <span className="float-title" style={{ color: "#fff" }}>SDR Radio Signals</span>
