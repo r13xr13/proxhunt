@@ -6,7 +6,7 @@ import { fetchAirTraffic, fetchISSTracking, fetchMilitaryAircraft, fetchRocketLa
 import { fetchCyberThreats, fetchThreatFeeds, fetchGreyNoiseIntel, fetchShodanIntel, fetchCensysIntel, fetchVulnerabilityIntel } from "../services/cyber";
 import { fetchRSSNews, fetchDefenseNews, fetchUkraineNews, fetchMiddleEastNews } from "../services/rss";
 import { fetchStarlinkSatellites, fetchGPSSatellites, fetchMilitarySatellites, fetchSatelliteImagerySources } from "../services/satellites";
-import { fetchHackerNewsIntel, fetchRedditGeoPosts, fetchGlobalIncidents } from "../services/osint";
+import { fetchHackerNewsIntel, fetchRedditGeoPosts, fetchGlobalIncidents, fetchUCDPConflicts, fetchACLEDConflicts, fetchGlobalTerrorism, fetchxSubConflicts, fetchCREBSSecurity, fetchGlobalNews, fetchObsidianVault, fetchUSGovData, fetchGlobalPatents, fetchEconomicData, fetchWorldBankData, fetchTradeData, fetchFBICrimeData, fetchCDCData, fetchNATOData, fetchSIPRIData, fetchUNICEFData, fetchChinaData, fetchRussiaData, fetchIndiaData, fetchEUData, fetchBRICSData, fetchOPECData, fetchASEANData, fetchWHOData } from "../services/osint";
 import { fetchInfrastructure, fetchPowerGrid, fetchCriticalInfrastructure } from "../services/land";
 import { fetchISSTracking as fetchSpaceISS, fetchN2YOSatellites, fetchSpaceDebris, fetchSatellitePasses, fetchRocketLaunches } from "../services/space";
 import { fetchSDRSignals, fetchRadioHFMidEast, fetchRadioUkraine, fetchGlobalSDRNodes, fetchHFActiveFrequencies, fetchAirbandFrequencies, fetchSignalIntel } from "../services/radio";
@@ -76,6 +76,33 @@ async function getConflictEvents(): Promise<EventData[]> {
       fetchModisFires(),
       fetchLiveUAMapData(),
       fetchAllLiveUAMapRegions(),
+      // OSINT Data Sources
+      fetchUCDPConflicts(),
+      fetchACLEDConflicts(),
+      fetchGlobalTerrorism(),
+      fetchxSubConflicts(),
+      fetchCREBSSecurity(),
+      fetchGlobalNews(),
+      fetchObsidianVault(),
+      fetchUSGovData(),
+      fetchGlobalPatents(),
+      fetchEconomicData(),
+      fetchWorldBankData(),
+      fetchTradeData(),
+      fetchFBICrimeData(),
+      fetchCDCData(),
+      fetchNATOData(),
+      fetchSIPRIData(),
+      fetchUNICEFData(),
+      // Global Country Data
+      fetchChinaData(),
+      fetchRussiaData(),
+      fetchIndiaData(),
+      fetchEUData(),
+      fetchBRICSData(),
+      fetchOPECData(),
+      fetchASEANData(),
+      fetchWHOData(),
     ]);
     return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
   });
