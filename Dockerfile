@@ -20,22 +20,16 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8080
-ENV OLLAMA_BASE_URL=http://localhost:11434
-
-# Install Ollama dependencies
-RUN apt-get update && apt-get install -y curl zstd && \
-    curl -fsSL https://ollama.com/install.sh | sh && \
-    rm -rf /var/lib/apt/lists/*
+# OLLAMA_BASE_URL should be set via Railway environment variables
+# Example: OLLAMA_BASE_URL=http://host.docker.internal:11434 (for local machine access)
+# Or: OLLAMA_BASE_URL=https://your-ollama-server.com
 
 COPY --from=server-build /app/server/dist ./server/dist
 COPY --from=server-build /app/server/node_modules ./server/node_modules
 COPY --from=client-build /app/client-3d/dist ./client-build
 COPY server/package*.json ./server/
 
-# Create a startup script
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
 EXPOSE 8080
 
-CMD ["/app/start.sh"]
+# Start the Node.js server directly (no Ollama installation needed)
+CMD ["node", "server/dist/index.js"]
