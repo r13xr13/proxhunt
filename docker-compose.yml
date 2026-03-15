@@ -8,29 +8,7 @@ services:
       - .env
     environment:
       - REACT_APP_CESIUM_ION_TOKEN=${CESIUM_ION_TOKEN:-}
-      - ANTENNA_GATEWAY_URL=http://antenna-agent:18790
-    restart: unless-stopped
-    depends_on:
-      - antenna-agent
-    networks:
-      - conflict-globe
-
-  # Antenna Agent - AI Agent Framework
-  antenna-agent:
-    build:
-      context: ./antenna-agent
-      dockerfile: Dockerfile
-    container_name: antenna-agent
-    ports:
-      - "18790:18790"
-    env_file:
-      - .env
-    environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o}
-    volumes:
-      - antenna-data:/root/.antenna
+      - ANTENNA_GATEWAY_URL=${ANTENNA_GATEWAY_URL:-http://localhost:18790}
     restart: unless-stopped
     networks:
       - conflict-globe
@@ -46,6 +24,7 @@ services:
     environment:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://web:8080/api/conflicts}
     volumes:
       - discord-data:/app
     restart: unless-stopped
@@ -57,5 +36,4 @@ networks:
     driver: bridge
 
 volumes:
-  antenna-data:
   discord-data:
