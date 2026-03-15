@@ -270,6 +270,44 @@ export default function App() {
   const [threatScore, setThreatScore] = useState(0);
   const [threatLevel, setThreatLevel] = useState<"low" | "medium" | "high" | "critical">("low");
 
+  // Bookmarks, Alerts, Workspaces (for localStorage)
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+
+  // Auto-refresh
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(30);
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Timeline playback
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [timelinePosition, setTimelinePosition] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+
+  // Voice commands
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [transcript, setTranscript] = useState("");
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
+  // Workspace
+  const [currentWorkspace, setCurrentWorkspace] = useState<string | null>(null);
+
+  // Collaboration
+  const [collaborationRoom, setCollaborationRoom] = useState<string | null>(null);
+  const [collaborators, setCollaborators] = useState<{id: string; username: string; color: string; lat?: number; lng?: number}[]>([]);
+  const [username, setUsername] = useState("User-" + Math.random().toString(36).substring(2, 6));
+
+  // Drawings
+  const [drawnShapes, setDrawnShapes] = useState<any[]>([]);
+
+  // Handle enter key for search
+  const [handleEnter, setHandleEnter] = useState<() => void>(() => () => {});
 
 
   // ── Data loading ──

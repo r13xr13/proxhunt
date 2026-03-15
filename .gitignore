@@ -20,3 +20,4 @@ client-3d/node_modules/
 antenna-agent/build/
 antenna-agent/workspace/
 antenna-agent/*.log
+railway.json
