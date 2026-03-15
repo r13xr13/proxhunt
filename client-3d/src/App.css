@@ -414,3 +414,37 @@ input[type=date].text-input { font-family: var(--font-mono); font-size: 0.72rem;
   color: var(--text-3);
   margin-top: 4px;
 }
+
+/* OSINT Tools Grid */
+.osint-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.osint-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: var(--surface1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.osint-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.osint-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.osint-desc {
+  font-size: 0.66rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}

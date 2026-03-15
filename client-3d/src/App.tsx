@@ -1549,11 +1549,43 @@ export default function App() {
                           <li key={k} style={{ marginBottom: 4 }}>• {k}</li>
                         ))}
                       </ul>
-                      )}
+                    )}
                    </div>
-                 </div>
-              </>
-            )}
+                </div>
+
+                <div className="section">
+                  <SectionLabel>OSINT Tools</SectionLabel>
+                  <p style={{ fontSize: 11, color: "var(--text-2)", marginBottom: 12 }}>
+                    External OSINT resources for data collection
+                  </p>
+                  <div className="osint-grid">
+                    {[
+                      { name: "Shodan", url: "https://www.shodan.io", desc: "IoT devices" },
+                      { name: "Censys", url: "https://censys.io", desc: "Infrastructure" },
+                      { name: "SpiderFoot", url: "https://www.spiderfoot.com", desc: "Automation" },
+                      { name: "theHarvester", url: "https://github.com/laramies/theHarvester", desc: "Emails" },
+                      { name: "Maltego", url: "https://www.maltego.com", desc: "Visualization" },
+                      { name: "Have I Been Pwned", url: "https://haveibeenpwned.com", desc: "Breaches" },
+                      { name: "DNSDumpster", url: "https://dnsdumpster.com", desc: "Subdomains" },
+                      { name: "ExifTool", url: "https://exiftool.org", desc: "Metadata" },
+                      { name: "Google Dorks", url: "https://www.google.com/search?q=site:exploit.in+password", desc: "Search" },
+                      { name: "OSINT Combine", url: "https://www.osintcombine.com", desc: "Aggregated" },
+                    ].map(tool => (
+                      <a
+                        key={tool.name}
+                        href={tool.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="osint-card"
+                      >
+                        <span className="osint-name">{tool.name}</span>
+                        <span className="osint-desc">{tool.desc}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+               </>
+             )}
 
             {/* ── SDR Radio tab ── */}
             {activeLeftTab === "sdr" && (
