@@ -237,7 +237,6 @@ export default function App() {
   const [roomInput, setRoomInput] = useState("");
   
   // Floating panel positions (for draggable panels)
-  const [aiChatPosition, setAiChatPosition] = useState({ x: 20, y: 90 });
   const [sdrPosition, setSdrPosition] = useState({ x: 440, y: 90 });
   const [antennaPosition, setAntennaPosition] = useState({ x: 860, y: 90 });
   const [analyticsPosition, setAnalyticsPosition] = useState({ x: 20, y: 620 });
@@ -254,8 +253,7 @@ export default function App() {
     setDragStartPos({ x: e.clientX, y: e.clientY });
     
     // Get current position based on panel
-    if (panelId === 'aiChat') setPanelStartPos(aiChatPosition);
-    else if (panelId === 'sdr') setPanelStartPos(sdrPosition);
+    if (panelId === 'sdr') setPanelStartPos(sdrPosition);
     else if (panelId === 'antenna') setPanelStartPos(antennaPosition);
     else if (panelId === 'analytics') setPanelStartPos(analyticsPosition);
     else if (panelId === 'liveFeed') setPanelStartPos(liveFeedPosition);
@@ -274,8 +272,7 @@ export default function App() {
       const boundedX = Math.max(0, Math.min(window.innerWidth - 400, newX));
       const boundedY = Math.max(50, Math.min(window.innerHeight - 600, newY));
       
-      if (draggingPanel === 'aiChat') setAiChatPosition({ x: boundedX, y: boundedY });
-      else if (draggingPanel === 'sdr') setSdrPosition({ x: boundedX, y: boundedY });
+      if (draggingPanel === 'sdr') setSdrPosition({ x: boundedX, y: boundedY });
       else if (draggingPanel === 'antenna') setAntennaPosition({ x: boundedX, y: boundedY });
       else if (draggingPanel === 'analytics') setAnalyticsPosition({ x: boundedX, y: boundedY });
       else if (draggingPanel === 'liveFeed') setLiveFeedPosition({ x: boundedX, y: boundedY });
@@ -294,15 +291,15 @@ export default function App() {
     };
   }, [draggingPanel, dragStartPos, panelStartPos]);
   
-  // AI Chat state
-  const [aiChatInput, setAIChatInput] = useState("");
-  const [aiChatMessages, setAIChatMessages] = useState<{role: string, content: string}[]>([]);
-  const [aiChatLoading, setAIChatLoading] = useState(false);
-  
-  // Antenna Agent Chat state
+  // Antenna Agent Chat state (handles all AI)
   const [antennaChatInput, setAntennaChatInput] = useState("");
   const [antennaChatMessages, setAntennaChatMessages] = useState<{role: string, content: string}[]>([]);
   const [antennaChatLoading, setAntennaChatLoading] = useState(false);
+  
+  // AI Chat state (Agent/Antenna chat)
+  const [aiChatInput, setAIChatInput] = useState("");
+  const [aiChatMessages, setAIChatMessages] = useState<{role: string, content: string}[]>([]);
+  const [aiChatLoading, setAIChatLoading] = useState(false);
   
   // SDR Radio state
   const [sdrSignals, setSdrSignals] = useState<any[]>([]);
@@ -312,11 +309,27 @@ export default function App() {
   const [sdrBandwidth, setSdrBandwidth] = useState(2400);
   const [drawMode, setDrawMode] = useState<"none" | "circle" | "polygon" | "line">("none");
 
+  // Graph/Visualization Panel
+  const [showGraphPanel, setShowGraphPanel] = useState(false);
+  const [graphType, setGraphType] = useState<"arcs"|"heatmap"|"clusters"|"rings"|"paths">("arcs");
+
+  // Intelligence Panel - All OSINT Tools
+  const [showIntelligencePanel, setShowIntelligencePanel] = useState(false);
+  const [intelligenceTab, setIntelligenceTab] = useState<"bounty"|"research"|"patterns"|"threats"|"pentest"|"reports">("threats");
+  const [intelligenceQuery, setIntelligenceQuery] = useState("");
+  const [intelligenceResults, setIntelligenceResults] = useState<any[]>([]);
+  const [intelligenceLoading, setIntelligenceLoading] = useState(false);
+  const [patterns, setPatterns] = useState<any[]>([]);
+  const [plugins, setPlugins] = useState<any[]>([]);
+
   // Live feed
   const [liveFeedItems, setLiveFeedItems] = useState<{ id: string; time: Date; message: string; type: string; severity: string }[]>([]);
 
   // Camera Viewer
   const [cameraViewer, setCameraViewer] = useState<{ event: ConflictEvent; url: string } | null>(null);
+  
+  // Camera markers on globe
+  const [cameraMarkers, setCameraMarkers] = useState<any[]>([]);
 
   // Threat
   const [threatScore, setThreatScore] = useState(0);
@@ -388,14 +401,25 @@ export default function App() {
   // Hover state
   const [hoveredEvent, setHoveredEvent] = useState<ConflictEvent | null>(null);
 
-  // Dedicated AI Chat Panel
-  const [showAIChatPanel, setShowAIChatPanel] = useState(false);
-
   // Dedicated SDR Panel
   const [showSDRPanel, setShowSDRPanel] = useState(false);
 
-  // Dedicated Antenna Agent Panel
+  // Dedicated Antenna Agent Panel (handles AI + SDR analysis)
   const [showAntennaPanel, setShowAntennaPanel] = useState(false);
+
+  // OSINT Tools Panel
+  const [showOSINTPanel, setShowOSINTPanel] = useState(false);
+  const [osintQuery, setOsintQuery] = useState("");
+  const [osintResults, setOsintResults] = useState<any[]>([]);
+  const [osintLoading, setOsintLoading] = useState(false);
+
+  // Camera Viewer Panel
+  const [showCameraPanel, setShowCameraPanel] = useState(false);
+  const [cameraResults, setCameraResults] = useState<any[]>([]);
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const [selectedCamera, setSelectedCamera] = useState<any>(null);
+  const [dorkQuery, setDorkQuery] = useState("");
+  const [dorkResults, setDorkResults] = useState<any[]>([]);
 
 
   // ── Data loading ──
@@ -406,6 +430,8 @@ export default function App() {
       const evts = data.events || [];
       setEvents(evts);
       checkAlerts(evts);
+      // Load camera markers
+      loadCameraMarkers();
     } catch (e) {
       console.error("Failed to load data:", e);
     } finally {
@@ -414,6 +440,27 @@ export default function App() {
   }, []); // eslint-disable-line
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Camera markers on globe ──
+  const loadCameraMarkers = async () => {
+    try {
+      const res = await fetch("/api/intelligence/cameras");
+      const data = await res.json();
+      const markers = (data.cameras || []).map((cam: any, i: number) => ({
+        id: `cam-${i}`,
+        lat: 30 + Math.random() * 20, // Random lat for demo (would use geolocation in production)
+        lon: -120 + Math.random() * 60, // Random lon for demo
+        size: 4,
+        color: cam.type === 'traffic' ? '#ec4899' : '#8b5cf6',
+        icon: '▲',
+        title: cam.title || cam.source,
+        data: cam
+      }));
+      setCameraMarkers(markers);
+    } catch (e) {
+      console.error("Failed to load camera markers:", e);
+    }
+  };
 
   // ── SDR Radio functions ──
   const loadSDRSignals = useCallback(async () => {
@@ -428,31 +475,7 @@ export default function App() {
 
   useEffect(() => { loadSDRSignals(); }, [loadSDRSignals]);
 
-  // ── AI Chat functions ──
-  const sendAIMessage = async (message: string) => {
-    if (!message.trim()) return;
-    
-    setAIChatLoading(true);
-    setAIChatMessages(prev => [...prev, { role: "user", content: message }]);
-    
-    try {
-      const response = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history: aiChatMessages })
-      });
-      
-      const data = await response.json();
-      setAIChatMessages(prev => [...prev, { role: "assistant", content: data.response || "No response" }]);
-    } catch (error) {
-      console.error("AI chat error:", error);
-      setAIChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
-    } finally {
-      setAIChatLoading(false);
-    }
-  };
-
-  // ── Antenna Agent Chat functions ──
+  // ── Antenna Agent Chat functions (handles all AI) ──
   const sendAntennaMessage = async (message: string) => {
     if (!message.trim()) return;
     
@@ -460,9 +483,7 @@ export default function App() {
     setAntennaChatMessages(prev => [...prev, { role: "user", content: message }]);
     
     try {
-      // Connect to Antenna agent gateway (default: http://localhost:18790)
       const antennaGateway = process.env.ANTENNA_GATEWAY_URL || "http://localhost:18790";
-      
       const response = await fetch(`${antennaGateway}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -479,6 +500,405 @@ export default function App() {
     }
   };
 
+  // ── OSINT Search functions ──
+  const runOSINTSearch = async (query: string) => {
+    if (!query.trim()) return;
+    setOsintLoading(true);
+    setOsintResults([]);
+    
+    try {
+      const results: any[] = [];
+      
+      // Check local data for matching events
+      const matchingEvents = events.filter(e => 
+        e.type?.toLowerCase().includes(query.toLowerCase()) ||
+        e.description?.toLowerCase().includes(query.toLowerCase()) ||
+        e.id?.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 5);
+      
+      if (matchingEvents.length > 0) {
+        results.push({
+          source: "Conflict Globe Database",
+          description: `Found ${matchingEvents.length} matching events in local OSINT data`,
+          severity: "low",
+          data: matchingEvents.map(e => ({ type: e.type, location: `${e.lat?.toFixed(2)}, ${e.lon?.toFixed(2)}`, source: e.source }))
+        });
+      }
+      
+      // Query Shodan-like endpoint if available
+      try {
+        const response = await fetch(`/api/cyber?search=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        if (data.events?.length > 0) {
+          results.push({
+            source: "Cyber Threat Intel",
+            description: `Found ${data.events.length} cyber threat events`,
+            severity: "high",
+            data: data.events.slice(0, 3).map((e: any) => ({ type: e.type, description: e.description?.substring(0, 100) }))
+          });
+        }
+      } catch {}
+      
+      // Add placeholder for external OSINT results
+      if (results.length === 0) {
+        results.push({
+          source: "External OSINT",
+          description: `Search query: "${query}"`,
+          severity: "low",
+          data: { query, note: "Use quick tools below to search external databases" }
+        });
+      }
+      
+      setOsintResults(results);
+    } catch (error) {
+      console.error("OSINT search error:", error);
+    } finally {
+      setOsintLoading(false);
+    }
+  };
+
+  // ── Camera Scanner Functions ──
+  const loadCameras = async (type: string) => {
+    setCameraLoading(true);
+    setCameraResults([]);
+    try {
+      const endpoint = type === 'insecam' ? '/api/intelligence/cameras/insecam' 
+        : type === 'traffic' ? '/api/intelligence/cameras/traffic'
+        : '/api/intelligence/cameras';
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      setCameraResults(data.cameras || []);
+    } catch (error) {
+      console.error("Camera load error:", error);
+      setCameraResults([{ source: 'Demo', title: 'Traffic Cam 1', url: 'https://www.trafficland.com/', type: 'traffic' }]);
+    } finally {
+      setCameraLoading(false);
+    }
+  };
+
+  const generateDorks = async (target: string) => {
+    setCameraLoading(true);
+    setDorkResults([]);
+    try {
+      const res = await fetch(`/api/intelligence/dorks?target=${encodeURIComponent(target)}`);
+      const data = await res.json();
+      setDorkResults(data.dorks || []);
+    } catch (error) {
+      console.error("Dork generation error:", error);
+    } finally {
+      setCameraLoading(false);
+    }
+  };
+
+  const executeDork = async (query: string) => {
+    setCameraLoading(true);
+    try {
+      const res = await fetch(`/api/intelligence/dorks/execute?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setDorkResults(data.results || []);
+    } catch (error) {
+      console.error("Dork execution error:", error);
+    } finally {
+      setCameraLoading(false);
+    }
+  };
+
+  // ── Intelligence Panel Functions ──
+  const runIntelligenceSearch = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    setIntelligenceResults([]);
+    
+    try {
+      const response = await fetch(`/api/intelligence/patterns?q=${encodeURIComponent(intelligenceQuery)}`);
+      const data = await response.json();
+      setIntelligenceResults(data.pattern || []);
+    } catch (error) {
+      console.error("Intelligence search error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const loadPatterns = async () => {
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch("/api/intelligence/patterns");
+      const data = await response.json();
+      setPatterns(data.patterns || []);
+      setIntelligenceResults(data.patterns?.slice(0, 10).map((p: any) => ({
+        title: p.name,
+        description: p.description,
+        severity: p.threatLevel,
+        data: { confidence: p.confidence, type: p.type, indicators: p.indicators }
+      })) || []);
+    } catch (error) {
+      console.error("Load patterns error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const loadPlugins = async () => {
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch("/api/intelligence/plugins");
+      const data = await response.json();
+      setPlugins(data.plugins || []);
+      setIntelligenceResults(data.plugins?.map((p: any) => ({
+        title: p.name,
+        description: `${p.image} - ${p.status}`,
+        severity: p.state === "running" ? "low" : "medium",
+        data: p
+      })) || []);
+    } catch (error) {
+      console.error("Load plugins error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runBugBountySearch = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch(`/api/intelligence/bugbounty/programs?q=${encodeURIComponent(intelligenceQuery)}`);
+      const data = await response.json();
+      setIntelligenceResults(data.programs?.slice(0, 10).map((p: any) => ({
+        title: p.name,
+        description: `${p.platform} - Bounty: $${p.bounty}`,
+        severity: p.bounty > 10000 ? "high" : "medium",
+        data: p
+      })) || []);
+    } catch (error) {
+      console.error("Bug bounty search error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runCVELookup = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    try {
+      const cveId = intelligenceQuery.toUpperCase().includes("CVE") ? intelligenceQuery : `CVE-${intelligenceQuery}`;
+      const response = await fetch(`/api/intelligence/bugbounty/cve/${cveId}`);
+      const data = await response.json();
+      setIntelligenceResults([{
+        title: cveId,
+        description: data.cve ? "Found in NVD" : "Not found",
+        severity: "high",
+        data: data.cve
+      }]);
+    } catch (error) {
+      console.error("CVE lookup error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const analyzePatterns = async () => {
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch("/api/intelligence/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: events })
+      });
+      const data = await response.json();
+      setIntelligenceResults(data.patterns?.slice(0, 10).map((p: any) => ({
+        title: p.name,
+        description: p.description,
+        severity: p.threatLevel,
+        data: { confidence: p.confidence, type: p.type, events: p.events?.length }
+      })) || []);
+    } catch (error) {
+      console.error("Analyze patterns error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runDarkWebSearch = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch(`/api/intelligence/darkweb/search?q=${encodeURIComponent(intelligenceQuery)}`);
+      const data = await response.json();
+      setIntelligenceResults(data.results?.slice(0, 10).map((r: any) => ({
+        title: r.title,
+        description: r.snippet,
+        severity: r.threatLevel,
+        data: r
+      })) || []);
+    } catch (error) {
+      console.error("Dark web search error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runClearWebSearch = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch(`/api/intelligence/clearweb/search?q=${encodeURIComponent(intelligenceQuery)}`);
+      const data = await response.json();
+      setIntelligenceResults(data.results?.slice(0, 10).map((r: any) => ({
+        title: r.title,
+        description: r.content?.substring(0, 150),
+        severity: "low",
+        data: r
+      })) || []);
+    } catch (error) {
+      console.error("Clear web search error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runRecon = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch("/api/intelligence/sigil7/recon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: intelligenceQuery })
+      });
+      const data = await response.json();
+      setIntelligenceResults(data.results?.map((r: any) => ({
+        title: `${r.tool} on ${r.target}`,
+        description: `Status: ${r.status}`,
+        severity: r.status === "failed" ? "medium" : "low",
+        data: { output: r.output?.substring(0, 500), findings: r.findings }
+      })) || [{ title: "Container offline", description: "Sigil7 container not running", severity: "medium" }]);
+    } catch (error) {
+      console.error("Recon error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runVulnScan = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch("/api/intelligence/sigil7/vulnscan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: intelligenceQuery })
+      });
+      const data = await response.json();
+      setIntelligenceResults(data.results?.map((r: any) => ({
+        title: `${r.tool} - ${r.target}`,
+        description: `Findings: ${r.findings?.length || 0}`,
+        severity: r.findings?.length > 0 ? "high" : "low",
+        data: r
+      })) || [{ title: "Container offline", description: "Sigil7 container not running", severity: "medium" }]);
+    } catch (error) {
+      console.error("Vuln scan error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runPentestAI = async () => {
+    if (!intelligenceQuery.trim()) return;
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch("/api/intelligence/sigil7/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: `Analyze this target for vulnerabilities: ${intelligenceQuery}` })
+      });
+      const data = await response.json();
+      setIntelligenceResults([{
+        title: "AI Analysis",
+        description: data.response?.response?.substring(0, 500) || "No response",
+        severity: "medium",
+        data: data.response
+      }]);
+    } catch (error) {
+      console.error("AI analysis error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const runTool = async (toolName: string) => {
+    if (!intelligenceQuery.trim()) {
+      setIntelligenceQuery(toolName);
+      return;
+    }
+    setIntelligenceLoading(true);
+    try {
+      const response = await fetch("/api/intelligence/sigil7/tool", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toolName, target: intelligenceQuery })
+      });
+      const data = await response.json();
+      setIntelligenceResults([{
+        title: `${toolName} results`,
+        description: data.result?.output?.substring(0, 300) || "No output",
+        severity: "low",
+        data: data.result
+      }]);
+    } catch (error) {
+      console.error("Tool error:", error);
+    } finally {
+      setIntelligenceLoading(false);
+    }
+  };
+
+  const filterPattern = (type: string) => {
+    const filtered = patterns.filter(p => p.type === type);
+    setIntelligenceResults(filtered.map(p => ({
+      title: p.name,
+      description: p.description,
+      severity: p.threatLevel,
+      data: { confidence: p.confidence }
+    })));
+  };
+
+  const exportReport = (format: string) => {
+    const data = { events, patterns, plugins, exported: new Date().toISOString() };
+    let content = "";
+    let mime = "text/plain";
+    let ext = "txt";
+    
+    if (format === "json") {
+      content = JSON.stringify(data, null, 2);
+      mime = "application/json";
+      ext = "json";
+    } else if (format === "csv") {
+      content = "id,type,category,severity,date,source\n";
+      events.forEach(e => {
+        content += `${e.id},${e.type},${e.category},${e.severity},${e.date},${e.source}\n`;
+      });
+      mime = "text/csv";
+      ext = "csv";
+    } else if (format === "ioc") {
+      content = "Indicator,Type,Source\n";
+      events.forEach(e => {
+        if (e.description) {
+          const ips = e.description.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g);
+          ips?.forEach(ip => content += `${ip},IP,${e.source}\n`);
+        }
+      });
+      mime = "text/plain";
+      ext = "ioc";
+    }
+    
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `intelligence-report.${ext}`;
+    a.click();
+  };
+
   // ── LocalStorage ──
   useEffect(() => {
     try {
@@ -490,14 +910,6 @@ export default function App() {
   useEffect(() => { localStorage.setItem("cg_bookmarks", JSON.stringify(bookmarks)); }, [bookmarks]);
   useEffect(() => { localStorage.setItem("cg_alerts", JSON.stringify(alerts)); }, [alerts]);
   useEffect(() => { localStorage.setItem("cg_workspaces", JSON.stringify(workspaces)); }, [workspaces]);
-
-  // ── AI Chat auto-scroll ──
-  useEffect(() => {
-    const container = document.getElementById("ai-chat-messages");
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-  }, [aiChatMessages]);
 
   // ── Antenna Chat auto-scroll ──
   useEffect(() => {
@@ -928,39 +1340,96 @@ export default function App() {
   }, [analytics]);
 
   // Globe layer data
-  // Arc events: events that genuinely have a different end point (arms transfers, flight paths, etc)
-  // Must filter from timelineEvents BEFORE the endLat=lat fallback is applied in validEvents
+  // Arc connections: connect related events across the globe
   const arcData = useMemo(() => {
     if (!layers.showArcs) return [];
-    // Explicit arc events (have endLat/endLon defined and different from start)
+    const arcs: any[] = [];
+    
+    // Explicit arc events (have endLat/endLon defined - like arms transfers, flight paths)
     const explicit = timelineEvents
       .filter(e => e.endLat !== undefined && e.endLon !== undefined && e.endLat !== e.lat && e.lat !== 0)
-      .slice(0, 80)
+      .slice(0, 50)
       .map(e => ({
         startLat: e.lat, startLng: e.lon, endLat: e.endLat!, endLng: e.endLon!,
         color: CATEGORY_COLORS[e.category] || "#ffd700",
         event: e,
+        type: "explicit",
       }));
-    // Auto-generated arcs: critical events within 800km of each other, same category
-    const criticals = timelineEvents.filter(e => e.severity === "critical" && e.lat !== 0 && !e.endLat);
-    const autoArcs: typeof explicit = [];
-    for (let i = 0; i < Math.min(criticals.length, 30); i++) {
-      for (let j = i + 1; j < Math.min(criticals.length, 30); j++) {
-        const a = criticals[i], b = criticals[j];
-        if (a.category !== b.category) continue;
+    arcs.push(...explicit);
+    
+    // Connect high/critical severity events (conflict chains)
+    const significant = timelineEvents.filter(e => 
+      (e.severity === "critical" || e.severity === "high") && e.lat !== 0
+    );
+    
+    for (let i = 0; i < Math.min(significant.length, 40); i++) {
+      for (let j = i + 1; j < Math.min(significant.length, 40); j++) {
+        const a = significant[i], b = significant[j];
         const dist = Math.sqrt(Math.pow(a.lat - b.lat, 2) + Math.pow(a.lon - b.lon, 2));
-        if (dist < 8 && dist > 0.5) { // ~800km threshold in degrees
-          autoArcs.push({
+        if (dist < 5 && dist > 0.3) { // ~500km threshold
+          arcs.push({
             startLat: a.lat, startLng: a.lon, endLat: b.lat, endLng: b.lon,
-            color: CATEGORY_COLORS[a.category] + "66",
+            color: (a.severity === "critical" ? "#ef4444" : "#f97316") + "88",
             event: a,
+            type: "severity",
           });
-          if (autoArcs.length >= 20) break;
+          if (arcs.length >= 60) break;
         }
       }
-      if (autoArcs.length >= 20) break;
+      if (arcs.length >= 60) break;
     }
-    return [...explicit, ...autoArcs];
+    
+    // Connect events from same source (intel feeds, agencies)
+    const sourceGroups = new Map<string, typeof timelineEvents>();
+    timelineEvents.forEach(e => {
+      if (e.source && e.lat !== 0) {
+        const source = e.source.toLowerCase();
+        if (!sourceGroups.has(source)) sourceGroups.set(source, []);
+        sourceGroups.get(source)!.push(e);
+      }
+    });
+    
+    sourceGroups.forEach((events) => {
+      if (events.length < 2) return;
+      const sorted = events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      for (let i = 0; i < Math.min(sorted.length - 1, 8); i++) {
+        const a = sorted[i], b = sorted[i + 1];
+        const dist = Math.sqrt(Math.pow(a.lat - b.lat, 2) + Math.pow(a.lon - b.lon, 2));
+        if (dist < 15 && dist > 0.5) {
+          arcs.push({
+            startLat: a.lat, startLng: a.lon, endLat: b.lat, endLng: b.lon,
+            color: "#8b5cf6" + "66",
+            event: a,
+            type: "source",
+          });
+        }
+        if (arcs.length >= 80) break;
+      }
+    });
+    
+    // Connect events in same category that are geographically close (conflict zones)
+    const categories = ["conflict", "land", "air", "maritime"];
+    categories.forEach(cat => {
+      const catEvents = timelineEvents.filter(e => e.category === cat && e.lat !== 0);
+      for (let i = 0; i < Math.min(catEvents.length, 20); i++) {
+        for (let j = i + 1; j < Math.min(catEvents.length, 20); j++) {
+          const a = catEvents[i], b = catEvents[j];
+          const dist = Math.sqrt(Math.pow(a.lat - b.lat, 2) + Math.pow(a.lon - b.lon, 2));
+          if (dist < 3 && dist > 0.2) {
+            arcs.push({
+              startLat: a.lat, startLng: a.lon, endLat: b.lat, endLng: b.lon,
+              color: CATEGORY_COLORS[cat] + "44",
+              event: a,
+              type: "category",
+            });
+          }
+          if (arcs.length >= 100) break;
+        }
+        if (arcs.length >= 100) break;
+      }
+    });
+    
+    return arcs.slice(0, 100);
   }, [timelineEvents, layers.showArcs]);
 
   const ringsData = useMemo(() => !layers.showRings ? [] : validEvents.slice(0, 300), [validEvents, layers.showRings]);
@@ -1842,9 +2311,12 @@ export default function App() {
             {([
               ["RFSH", "Refresh", () => loadData(), false],
               [globeTheme === "dark" ? "DRK" : "LIT", "Theme", () => setGlobeTheme(t => t === "dark" ? "light" : "dark"), false],
-              ["AI", "AI Chat", () => setShowAIChatPanel(p => !p), showAIChatPanel],
               ["SDR", "SDR", () => setShowSDRPanel(p => !p), showSDRPanel],
-              ["ANT", "Antenna", () => setShowAntennaPanel(p => !p), showAntennaPanel],
+              ["AGNT", "Agent", () => setShowAntennaPanel(p => !p), showAntennaPanel],
+              ["OSNT", "OSINT", () => setShowOSINTPanel(p => !p), showOSINTPanel],
+              ["CAM", "Cams", () => { setShowCameraPanel(p => !p); loadCameras('all'); }, showCameraPanel],
+              ["GRPH", "Graph", () => setShowGraphPanel(p => !p), showGraphPanel],
+              ["INT", "Intel", () => setShowIntelligencePanel(p => !p), showIntelligencePanel],
               ["DATA", "Analytics", () => setShowAnalytics(p => !p), showAnalytics],
               ["NET", "Network", () => setShowEntityGraph(p => !p), showEntityGraph],
               ["TIME", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
@@ -1889,35 +2361,68 @@ export default function App() {
                  objectLat={(d: any) => d.lat}
                  objectLng={(d: any) => d.lon}
                  objectAltitude={0.02}
-                 objectThreeObject={(d: any) => {
-                   const cat = d.category;
-                   const THREE = (window as any).THREE;
-                   let mesh;
-                   
-                   if (cat === "air") {
-                     // Airplane - cone pointing up with wings
-                     const bodyGeo = new THREE.ConeGeometry(0.15, 0.4, 8);
-                     const bodyMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
-                     const body = new THREE.Mesh(bodyGeo, bodyMat);
-                     body.rotation.x = Math.PI;
-                     
-                     // Wings
-                     const wingGeo = new THREE.BoxGeometry(0.6, 0.02, 0.15);
-                     const wingMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
-                     const wings = new THREE.Mesh(wingGeo, wingMat);
-                     wings.position.y = -0.05;
-                     
-                     // Tail
-                     const tailGeo = new THREE.BoxGeometry(0.2, 0.02, 0.08);
-                     const tail = new THREE.Mesh(tailGeo, wingMat);
-                     tail.position.y = -0.15;
-                     tail.position.z = 0.05;
-                     
-                     mesh = new THREE.Group();
-                     mesh.add(body);
-                     mesh.add(wings);
-                     mesh.add(tail);
-                     mesh.rotation.x = Math.PI / 2;
+                  objectThreeObject={(d: any) => {
+                    const cat = d.category;
+                    const THREE = (window as any).THREE;
+                    let mesh;
+                    
+                    if (cat === "air") {
+                      // Detailed Airplane
+                      const plane = new THREE.Group();
+                      
+                      // Fuselage - elongated cylinder
+                      const fuselageGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.5, 8);
+                      const fuselageMat = new THREE.MeshBasicMaterial({ color: 0xe5e7eb });
+                      const fuselage = new THREE.Mesh(fuselageGeo, fuselageMat);
+                      fuselage.rotation.z = Math.PI / 2;
+                      plane.add(fuselage);
+                      
+                      // Nose cone
+                      const noseGeo = new THREE.ConeGeometry(0.06, 0.15, 8);
+                      const noseMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+                      const nose = new THREE.Mesh(noseGeo, noseMat);
+                      nose.rotation.z = -Math.PI / 2;
+                      nose.position.x = 0.32;
+                      plane.add(nose);
+                      
+                      // Main wings
+                      const wingGeo = new THREE.BoxGeometry(0.08, 0.02, 0.7);
+                      const wingMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+                      const wings = new THREE.Mesh(wingGeo, wingMat);
+                      wings.position.y = 0.02;
+                      wings.position.x = 0.02;
+                      plane.add(wings);
+                      
+                      // Horizontal stabilizer (tail wings)
+                      const hStabGeo = new THREE.BoxGeometry(0.05, 0.015, 0.25);
+                      const hStab = new THREE.Mesh(hStabGeo, wingMat);
+                      hStab.position.x = -0.22;
+                      hStab.position.y = 0.02;
+                      plane.add(hStab);
+                      
+                      // Vertical stabilizer (tail fin)
+                      const vStabGeo = new THREE.BoxGeometry(0.06, 0.12, 0.015);
+                      const vStabMat = new THREE.MeshBasicMaterial({ color: 0x16a34a });
+                      const vStab = new THREE.Mesh(vStabGeo, vStabMat);
+                      vStab.position.x = -0.22;
+                      vStab.position.y = 0.07;
+                      plane.add(vStab);
+                      
+                      // Engines
+                      const engineGeo = new THREE.CylinderGeometry(0.025, 0.03, 0.12, 6);
+                      const engineMat = new THREE.MeshBasicMaterial({ color: 0x374151 });
+                      
+                      const engineL = new THREE.Mesh(engineGeo, engineMat);
+                      engineL.rotation.z = Math.PI / 2;
+                      engineL.position.set(0.05, -0.05, 0.2);
+                      plane.add(engineL);
+                      
+                      const engineR = new THREE.Mesh(engineGeo, engineMat);
+                      engineR.rotation.z = Math.PI / 2;
+                      engineR.position.set(0.05, -0.05, -0.2);
+                      plane.add(engineR);
+                      
+                      mesh = plane;
                      
                    } else if (cat === "maritime") {
                      // Ship - elongated box with deck
@@ -1925,14 +2430,35 @@ export default function App() {
                      const hullMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
                      const hull = new THREE.Mesh(hullGeo, hullMat);
                      
-                     const deckGeo = new THREE.BoxGeometry(0.35, 0.08, 0.1);
-                     const deckMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
-                     const deck = new THREE.Mesh(deckGeo, deckMat);
-                     deck.position.y = 0.08;
-                     
-                     mesh = new THREE.Group();
-                     mesh.add(hull);
-                     mesh.add(deck);
+                      const deckGeo = new THREE.BoxGeometry(0.35, 0.08, 0.1);
+                      const deckMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
+                      const deck = new THREE.Mesh(deckGeo, deckMat);
+                      deck.position.y = 0.08;
+                      
+                      // Bridge
+                      const bridgeGeo = new THREE.BoxGeometry(0.15, 0.1, 0.08);
+                      const bridgeMat = new THREE.MeshBasicMaterial({ color: 0x1e40af });
+                      const bridge = new THREE.Mesh(bridgeGeo, bridgeMat);
+                      bridge.position.set(0.1, 0.14, 0);
+                      hull.add(bridge);
+                      
+                      // Mast/radar
+                      const mastGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.12, 4);
+                      const mastMat = new THREE.MeshBasicMaterial({ color: 0x374151 });
+                      const mast = new THREE.Mesh(mastGeo, mastMat);
+                      mast.position.set(-0.05, 0.16, 0);
+                      hull.add(mast);
+                      
+                      // Radar dish
+                      const radarGeo = new THREE.SphereGeometry(0.025, 6, 6);
+                      const radarMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+                      const radar = new THREE.Mesh(radarGeo, radarMat);
+                      radar.position.set(-0.05, 0.22, 0);
+                      hull.add(radar);
+                      
+                      mesh = new THREE.Group();
+                      mesh.add(hull);
+                      mesh.add(deck);
                      
                    } else if (cat === "space") {
                      // Satellite - octahedron with panels
@@ -2095,6 +2621,16 @@ pointColor={(d: any) => {
                 pathPointLng={(p: any) => p[1]}
                 pathColor={(d: any) => d.color}
                 pathStroke={1.5}
+                
+                // Camera markers layer
+                markersData={cameraMarkers}
+                markerLat={(d: any) => d.lat}
+                markerLng={(d: any) => d.lon}
+                markerSize={(d: any) => d.size}
+                markerColor={(d: any) => d.color}
+                markerRadius={0.3}
+                markerAltitude={0.02}
+                
                 animateIn
                 enablePointerInteraction
               />
@@ -2642,74 +3178,31 @@ pointColor={(d: any) => {
         </div>
       )}
 
-      {/* Dedicated AI Chat Panel */}
-      {showAIChatPanel && (
+      {/* OSINT Tools Panel */}
+      {showOSINTPanel && (
         <div 
           className="float-panel" 
           style={{ 
-            left: aiChatPosition.x, 
-            top: aiChatPosition.y, 
-            width: 380, 
-            height: 520,
-            cursor: draggingPanel === 'aiChat' ? 'grabbing' : 'grab',
+            left: 400, 
+            top: 100, 
+            width: 500, 
+            height: 600,
           }}
-          onMouseDown={(e) => handleDragStart('aiChat', e)}
         >
-          <div className="float-header" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)", cursor: 'grab' }}>
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)", cursor: 'grab' }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "1.2rem" }}>AI</span>
-              <span className="float-title" style={{ color: "#fff" }}>AI Assistant</span>
+              <span style={{ fontSize: "1.2rem" }}>OSINT</span>
+              <span className="float-title" style={{ color: "#fff" }}>OSINT Tools</span>
             </div>
-            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowAIChatPanel(false)}>X</button>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowOSINTPanel(false)}>X</button>
           </div>
-          <div className="float-body" style={{ padding: 0, display: "flex", flexDirection: "column", height: "calc(100% - 50px)" }}>
-            <div style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
-              {aiChatMessages.length === 0 && (
-                <div style={{ textAlign: "center", color: "var(--text-3)", padding: "30px 20px" }}>
-                  <div style={{ fontSize: "2rem", marginBottom: 10 }}>AI</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
-                    Ask me about conflicts, signals, or any OSINT data.<br/>
-                    I can analyze patterns and provide insights.
-                  </div>
-                </div>
-              )}
-              {aiChatMessages.map((msg, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-                  <div style={{ 
-                    maxWidth: "80%", 
-                    padding: "10px 14px", 
-                    borderRadius: 12,
-                    background: msg.role === "user" ? "var(--accent)" : "var(--surface2)",
-                    color: msg.role === "user" ? "#fff" : "var(--text)",
-                    fontSize: "0.82rem",
-                    lineHeight: 1.5,
-                  }}>
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
-              {aiChatLoading && (
-                <div style={{ display: "flex", justifyContent: "flex-start" }}>
-                  <div style={{ 
-                    padding: "10px 14px", 
-                    borderRadius: 12,
-                    background: "var(--surface2)",
-                    color: "var(--text-3)",
-                    fontSize: "0.82rem",
-                    fontStyle: "italic",
-                  }}>
-                    Analyzing...
-                  </div>
-                </div>
-              )}
-              <div ref={(el) => { if (el) el.scrollIntoView({ behavior: "smooth" }); }} />
-            </div>
-            <div style={{ padding: 14, borderTop: "1px solid var(--border)", display: "flex", gap: 8 }}>
+          <div className="float-body" style={{ padding: 14, overflow: "auto" }}>
+            <div style={{ marginBottom: 14 }}>
               <input 
                 type="text" 
-                placeholder="Ask about conflicts, signals..." 
+                placeholder="Search IPs, domains, emails, usernames..." 
                 style={{ 
-                  flex: 1, 
+                  width: "100%", 
                   padding: "10px 14px", 
                   border: "1px solid var(--border)", 
                   borderRadius: 8, 
@@ -2717,26 +3210,593 @@ pointColor={(d: any) => {
                   color: "var(--text)",
                   fontSize: "0.85rem",
                 }}
-                value={aiChatInput}
-                onChange={e => setAIChatInput(e.target.value)}
+                value={osintQuery}
+                onChange={e => setOsintQuery(e.target.value)}
                 onKeyPress={e => {
-                  if (e.key === "Enter" && aiChatInput.trim()) {
-                    sendAIMessage(aiChatInput);
-                    setAIChatInput("");
+                  if (e.key === "Enter" && osintQuery.trim()) {
+                    runOSINTSearch(osintQuery);
                   }
                 }}
               />
-              <button 
-                className="full-btn full-btn-primary"
-                style={{ padding: "10px 16px", borderRadius: 8 }}
-                onClick={() => {
-                  sendAIMessage(aiChatInput);
-                  setAIChatInput("");
+            </div>
+            
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+              {[
+                { label: "IP Lookup", icon: "IP", action: () => runOSINTSearch(osintQuery || "ip") },
+                { label: "Domain", icon: "DN", action: () => runOSINTSearch(osintQuery || "domain") },
+                { label: "Email", icon: "EM", action: () => runOSINTSearch(osintQuery || "email") },
+                { label: "Username", icon: "UN", action: () => runOSINTSearch(osintQuery || "username") },
+                { label: "Phone", icon: "PH", action: () => runOSINTSearch(osintQuery || "phone") },
+                { label: "Breach Check", icon: "HB", action: () => runOSINTSearch(osintQuery || "breach") },
+              ].map(btn => (
+                <button 
+                  key={btn.label}
+                  className="full-btn full-btn-primary"
+                  style={{ padding: "6px 12px", fontSize: "0.7rem", borderRadius: 6 }}
+                  onClick={btn.action}
+                >
+                  {btn.icon} {btn.label}
+                </button>
+              ))}
+            </div>
+
+            {osintLoading && (
+              <div style={{ textAlign: "center", padding: 20, color: "var(--text-3)" }}>
+                Searching OSINT databases...
+              </div>
+            )}
+
+            {osintResults.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {osintResults.map((result, i) => (
+                  <div key={i} style={{ 
+                    background: "var(--surface2)", 
+                    padding: 12, 
+                    borderRadius: 8,
+                    borderLeft: `3px solid ${result.severity === "critical" ? "#ef4444" : result.severity === "high" ? "#f97316" : "#22c55e"}`
+                  }}>
+                    <div style={{ fontWeight: "bold", marginBottom: 4, color: "var(--text)" }}>
+                      {result.source}
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "var(--text-2)", marginBottom: 6 }}>
+                      {result.description}
+                    </div>
+                    {result.data && (
+                      <pre style={{ fontSize: "0.7rem", background: "var(--bg)", padding: 8, borderRadius: 4, overflow: "auto", maxHeight: 100 }}>
+                        {JSON.stringify(result.data, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ marginTop: 14 }}>
+              <SectionLabel>Quick Tools</SectionLabel>
+              <div className="osint-grid" style={{ marginTop: 8 }}>
+                {[
+                  { name: "Shodan", url: "https://www.shodan.io/search?query=", desc: "IoT Search", icon: "S" },
+                  { name: "Censys", url: "https://censys.io/ipv4/", desc: "Host Search", icon: "C" },
+                  { name: "VirusTotal", url: "https://www.virustotal.com/gui/search/", desc: "Malware", icon: "V" },
+                  { name: "HaveIBeenPwned", url: "https://haveibeenpwned.com/", desc: "Breaches", icon: "H" },
+                  { name: "Hunter", url: "https://hunter.io/", desc: "Emails", icon: "Hu" },
+                  { name: "GreyNoise", url: "https://viz.greynoise.io/", desc: "Threats", icon: "G" },
+                  { name: "ZoomEye", url: "https://www.zoomeye.org/", desc: "China IoT", icon: "Z" },
+                  { name: "Crt.sh", url: "https://crt.sh/", desc: "Certificates", icon: "Cr" },
+                ].map(tool => (
+                  <a
+                    key={tool.name}
+                    href={tool.url + osintQuery}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="osint-card"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <span className="osint-name">{tool.icon} {tool.name}</span>
+                    <span className="osint-desc">{tool.desc}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Camera Viewer Panel */}
+      {showCameraPanel && (
+        <div 
+          className="float-panel" 
+          style={{ 
+            left: 400, 
+            top: 100, 
+            width: 550, 
+            height: 620,
+          }}
+        >
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)", cursor: 'grab' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.2rem" }}>CAM</span>
+              <span className="float-title" style={{ color: "#fff" }}>Camera Scanner</span>
+            </div>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowCameraPanel(false)}>X</button>
+          </div>
+          <div className="float-body" style={{ padding: 14, overflow: "auto", height: "calc(100% - 45px)" }}>
+            {/* Dork Generator Section */}
+            <div style={{ marginBottom: 16 }}>
+              <SectionLabel>Google Dork Generator</SectionLabel>
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <input 
+                  type="text" 
+                  placeholder="Enter target domain or keyword..." 
+                  style={{ 
+                    flex: 1,
+                    padding: "10px 14px", 
+                    border: "1px solid var(--border)", 
+                    borderRadius: 8, 
+                    background: "var(--surface2)", 
+                    color: "var(--text)",
+                    fontSize: "0.85rem",
+                  }}
+                  value={dorkQuery}
+                  onChange={e => setDorkQuery(e.target.value)}
+                />
+                <button 
+                  className="full-btn full-btn-primary"
+                  style={{ padding: "10px 16px", fontSize: "0.8rem" }}
+                  onClick={() => generateDorks(dorkQuery)}
+                >
+                  Generate
+                </button>
+              </div>
+              
+              {dorkResults.length > 0 && (
+                <div style={{ marginTop: 12, maxHeight: 120, overflow: "auto" }}>
+                  {dorkResults.slice(0, 5).map((d, i) => (
+                    <div key={i} style={{ 
+                      background: "var(--surface2)", 
+                      padding: 8, 
+                      borderRadius: 6,
+                      marginBottom: 4,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "0.75rem",
+                    }}>
+                      <span style={{ color: "var(--text-2)" }}>{d.category}</span>
+                      <code style={{ color: "var(--accent)" }}>{d.query}</code>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Camera Scanner Section */}
+            <div style={{ marginBottom: 16 }}>
+              <SectionLabel>Camera Sources</SectionLabel>
+              <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                <button 
+                  className="full-btn"
+                  style={{ padding: "6px 12px", fontSize: "0.7rem", background: cameraResults.some(c => c.source === 'Insecam') ? "var(--accent)" : "var(--surface2)" }}
+                  onClick={() => loadCameras('insecam')}
+                >
+                  Insecam
+                </button>
+                <button 
+                  className="full-btn"
+                  style={{ padding: "6px 12px", fontSize: "0.7rem" }}
+                  onClick={() => loadCameras('traffic')}
+                >
+                  Traffic Cams
+                </button>
+                <button 
+                  className="full-btn"
+                  style={{ padding: "6px 12px", fontSize: "0.7rem" }}
+                  onClick={() => loadCameras('all')}
+                >
+                  All Sources
+                </button>
+              </div>
+            </div>
+
+            {/* Camera Display Section */}
+            {cameraLoading && (
+              <div style={{ textAlign: "center", padding: 20, color: "var(--text-3)" }}>
+                Loading camera feeds...
+              </div>
+            )}
+
+            {selectedCamera ? (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: "bold", color: "var(--text)" }}>{selectedCamera.title || selectedCamera.source}</span>
+                  <button 
+                    onClick={() => setSelectedCamera(null)}
+                    style={{ background: "var(--surface2)", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer", fontSize: "0.7rem" }}
+                  >
+                    Close
+                  </button>
+                </div>
+                <div style={{ 
+                  background: "#000", 
+                  borderRadius: 8, 
+                  overflow: "hidden",
+                  height: 250,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--text-3)",
+                }}>
+                  {selectedCamera.url ? (
+                    <iframe 
+                      src={selectedCamera.url} 
+                      style={{ width: "100%", height: "100%", border: "none" }}
+                      title={selectedCamera.title || selectedCamera.source}
+                    />
+                  ) : (
+                    <span>Camera feed unavailable</span>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {cameraResults.length > 0 ? (
+                cameraResults.map((cam, i) => (
+                  <div key={i} style={{ 
+                    background: "var(--surface2)", 
+                    padding: 12, 
+                    borderRadius: 8,
+                    borderLeft: `3px solid ${cam.type === 'traffic' ? '#ec4899' : '#8b5cf6'}`,
+                    cursor: 'pointer',
+                    opacity: cam.status === 'unavailable' ? 0.5 : 1,
+                  }}
+                  onClick={() => setSelectedCamera(cam)}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <div style={{ fontWeight: "bold", marginBottom: 4, color: "var(--text)" }}>
+                        {cam.title || cam.source}
+                      </div>
+                      <span style={{ fontSize: "0.7rem", color: cam.status === 'active' ? '#22c55e' : '#f97316' }}>
+                        {cam.status || 'active'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-2)" }}>
+                      {cam.url}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: "center", padding: 20, color: "var(--text-3)", fontSize: "0.8rem" }}>
+                  No cameras loaded. Click a source button above.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Graph/Visualization Panel */}
+      {showGraphPanel && (
+        <div 
+          className="float-panel" 
+          style={{ 
+            left: 450, 
+            top: 100, 
+            width: 420, 
+            height: 520,
+          }}
+        >
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", cursor: 'grab' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.2rem" }}>GRPH</span>
+              <span className="float-title" style={{ color: "#fff" }}>Data Visualizations</span>
+            </div>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowGraphPanel(false)}>X</button>
+          </div>
+          <div className="float-body" style={{ padding: 14, overflow: "auto" }}>
+            <div style={{ marginBottom: 14 }}>
+              <SectionLabel>Overlay Type</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+                {[
+                  { id: "arcs", label: "Arc Connections", icon: "↗", desc: "Connect related events" },
+                  { id: "heatmap", label: "Heat Map", icon: "≡", desc: "Density visualization" },
+                  { id: "clusters", label: "Heat Clusters", icon: "◉", desc: "Hex bin clustering" },
+                  { id: "rings", label: "Pulse Rings", icon: "○", desc: "Event ripples" },
+                  { id: "paths", label: "Path Lines", icon: "╱", desc: "Movement routes" },
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      setGraphType(opt.id as any);
+                      setLayer(`show${opt.id.charAt(0).toUpperCase() + opt.id.slice(1)}` as any, true);
+                    }}
+                    style={{
+                      padding: "10px 12px",
+                      background: graphType === opt.id ? "var(--accent)" : "var(--surface2)",
+                      border: `1px solid ${graphType === opt.id ? "var(--accent)" : "var(--border)"}`,
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <div style={{ fontSize: "0.85rem", fontWeight: "bold", color: graphType === opt.id ? "#fff" : "var(--text)" }}>
+                      {opt.icon} {opt.label}
+                    </div>
+                    <div style={{ fontSize: "0.65rem", color: graphType === opt.id ? "#fff99" : "var(--text-3)", marginTop: 2 }}>
+                      {opt.desc}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="section">
+              <SectionLabel>Active Layers</SectionLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                <CheckRow checked={layers.showArcs} onChange={v => setLayer("showArcs", v)} icon="↗" label="Arc Connections" />
+                <CheckRow checked={layers.showHeatmap} onChange={v => setLayer("showHeatmap", v)} icon="≡" label="Heat Map" />
+                <CheckRow checked={layers.showHexBin} onChange={v => setLayer("showHexBin", v)} icon="◉" label="Heat Clusters" />
+                <CheckRow checked={layers.showRings} onChange={v => setLayer("showRings", v)} icon="○" label="Pulse Rings" />
+                <CheckRow checked={layers.showPaths} onChange={v => setLayer("showPaths", v)} icon="╱" label="Path Lines" />
+              </div>
+            </div>
+
+            <div className="section">
+              <SectionLabel>Statistics</SectionLabel>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-2)", marginTop: 8, fontFamily: "var(--font-mono)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Arc Connections:</span>
+                  <span style={{ color: "var(--accent)" }}>{arcData.length}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Heatmap Points:</span>
+                  <span style={{ color: "#ef4444" }}>{heatmapData.length}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Cluster Cells:</span>
+                  <span style={{ color: "#f59e0b" }}>{hexBinData.length}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Pulse Rings:</span>
+                  <span style={{ color: "#8b5cf6" }}>{ringsData.length}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Path Lines:</span>
+                  <span style={{ color: "#06b6d4" }}>{pathsData.length}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="section">
+              <SectionLabel>Description</SectionLabel>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-2)", marginTop: 4, lineHeight: 1.5 }}>
+                {graphType === "arcs" && "Arc connections show relationships between events - severity chains, source networks, and category clusters."}
+                {graphType === "heatmap" && "Heat map displays event density - warmer colors indicate higher concentration of activity."}
+                {graphType === "clusters" && "Hex bin clustering groups nearby events into hexagonal cells for density analysis."}
+                {graphType === "rings" && "Pulse rings animate outward from events to show temporal spread of incidents."}
+                {graphType === "paths" && "Path lines show movement routes - arms transfers, flight paths, naval routes."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Intelligence Panel - All OSINT Tools */}
+      {showIntelligencePanel && (
+        <div className="float-panel" style={{ left: 450, top: 80, width: 600, height: 700 }}>
+          <div className="float-header" style={{ background: "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)", cursor: 'grab' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: "1.2rem" }}>INT</span>
+              <span className="float-title" style={{ color: "#fff" }}>Intelligence Center</span>
+            </div>
+            <button className="float-close" style={{ color: "#fff" }} onClick={() => setShowIntelligencePanel(false)}>X</button>
+          </div>
+          <div className="float-body" style={{ padding: 10, overflow: "auto", height: "calc(100% - 50px)" }}>
+            {/* Intelligence Tabs */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 12, flexWrap: "wrap" }}>
+              {[
+                { id: "threats", label: "Threats", icon: "⚠" },
+                { id: "bounty", label: "Bug Bounty", icon: "B" },
+                { id: "patterns", label: "Patterns", icon: "◈" },
+                { id: "research", label: "Research", icon: "R" },
+                { id: "pentest", label: "Pentest", icon: "P" },
+                { id: "reports", label: "Reports", icon: "📋" },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setIntelligenceTab(tab.id as any)}
+                  style={{
+                    padding: "6px 12px",
+                    background: intelligenceTab === tab.id ? "var(--accent)" : "var(--surface2)",
+                    border: `1px solid ${intelligenceTab === tab.id ? "var(--accent)" : "var(--border)"}`,
+                    borderRadius: 6,
+                    color: intelligenceTab === tab.id ? "#fff" : "var(--text)",
+                    fontSize: "0.7rem",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {tab.icon} {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="text"
+                placeholder={intelligenceTab === "threats" ? "Search threats, actors, CVE..." : 
+                             intelligenceTab === "bounty" ? "Search bug bounty programs..." :
+                             intelligenceTab === "pentest" ? "Enter target for pentest..." :
+                             "Search..."}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  background: "var(--surface2)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  color: "var(--text)",
+                  fontSize: "0.85rem",
                 }}
-                disabled={aiChatLoading || !aiChatInput.trim()}
-              >
-                Send
-              </button>
+                value={intelligenceQuery}
+                onChange={e => setIntelligenceQuery(e.target.value)}
+                onKeyPress={e => {
+                  if (e.key === "Enter" && intelligenceQuery.trim()) {
+                    runIntelligenceSearch();
+                  }
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+              {intelligenceTab === "threats" && (
+                <>
+                  <button className="full-btn full-btn-primary" style={{ fontSize: "0.7rem" }} onClick={() => runIntelligenceSearch()}>Search Threats</button>
+                  <button className="full-btn" style={{ fontSize: "0.7rem" }} onClick={loadPatterns}>Load Patterns</button>
+                  <button className="full-btn" style={{ fontSize: "0.7rem" }} onClick={loadPlugins}>Check Plugins</button>
+                </>
+              )}
+              {intelligenceTab === "bounty" && (
+                <>
+                  <button className="full-btn full-btn-primary" style={{ fontSize: "0.7rem" }} onClick={() => runBugBountySearch()}>Search Programs</button>
+                  <button className="full-btn" style={{ fontSize: "0.7rem" }} onClick={() => runCVELookup()}>CVE Lookup</button>
+                </>
+              )}
+              {intelligenceTab === "patterns" && (
+                <button className="full-btn full-btn-primary" style={{ fontSize: "0.7rem" }} onClick={analyzePatterns}>Analyze Patterns</button>
+              )}
+              {intelligenceTab === "research" && (
+                <>
+                  <button className="full-btn full-btn-primary" style={{ fontSize: "0.7rem" }} onClick={() => runDarkWebSearch()}>Dark Web</button>
+                  <button className="full-btn" style={{ fontSize: "0.7rem" }} onClick={() => runClearWebSearch()}>Clear Web</button>
+                </>
+              )}
+              {intelligenceTab === "pentest" && (
+                <>
+                  <button className="full-btn full-btn-primary" style={{ fontSize: "0.7rem" }} onClick={() => runRecon()}>Run Recon</button>
+                  <button className="full-btn" style={{ fontSize: "0.7rem" }} onClick={() => runVulnScan()}>Vuln Scan</button>
+                  <button className="full-btn" style={{ fontSize: "0.7rem" }} onClick={() => runPentestAI()}>AI Analysis</button>
+                </>
+              )}
+              {intelligenceTab === "reports" && (
+                <button className="full-btn full-btn-primary" style={{ fontSize: "0.7rem" }} onClick={generateReport}>Generate Report</button>
+              )}
+            </div>
+
+            {intelligenceLoading && (
+              <div style={{ textAlign: "center", padding: 20, color: "var(--text-3)" }}>
+                Processing...
+              </div>
+            )}
+
+            {/* Results */}
+            {intelligenceResults.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflow: "auto" }}>
+                {intelligenceResults.map((r, i) => (
+                  <div key={i} style={{ background: "var(--surface2)", padding: 10, borderRadius: 8, borderLeft: `3px solid ${r.severity === "critical" ? "#ef4444" : r.severity === "high" ? "#f97316" : "#22c55e"}` }}>
+                    <div style={{ fontWeight: "bold", fontSize: "0.8rem", color: "var(--text)" }}>{r.title || r.name || "Result"}</div>
+                    <div style={{ fontSize: "0.7rem", color: "var(--text-2)", marginTop: 4 }}>{r.description || r.description?.substring(0, 150)}</div>
+                    {r.data && (
+                      <pre style={{ fontSize: "0.6rem", background: "var(--bg)", padding: 6, borderRadius: 4, marginTop: 6, overflow: "auto", maxHeight: 80 }}>
+                        {JSON.stringify(r.data, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Quick Tools Grid */}
+            <div style={{ marginTop: 12 }}>
+              <SectionLabel>
+                {intelligenceTab === "threats" && "Threat Intel Sources"}
+                {intelligenceTab === "bounty" && "Bug Bounty Platforms"}
+                {intelligenceTab === "patterns" && "Pattern Categories"}
+                {intelligenceTab === "research" && "Research Tools"}
+                {intelligenceTab === "pentest" && "Pentest Tools"}
+                {intelligenceTab === "reports" && "Report Options"}
+              </SectionLabel>
+              <div className="osint-grid" style={{ marginTop: 8 }}>
+                {intelligenceTab === "threats" && [
+                  { name: "AlienVault", url: "https://otx.alienvault.com", desc: "Pulse" },
+                  { name: "VirusTotal", url: "https://virustotal.com", desc: "Malware" },
+                  { name: "GreyNoise", url: "https://greynoise.io", desc: "Internet" },
+                  { name: "Shodan", url: "https://shodan.io", desc: "IoT" },
+                  { name: "Censys", url: "https://censys.io", desc: "SSL" },
+                  { name: "RiskIQ", url: "https://community.riskiq.com", desc: "Threat" },
+                ].map(tool => (
+                  <a key={tool.name} href={tool.url + intelligenceQuery} target="_blank" rel="noopener" className="osint-card">
+                    <span className="osint-name">{tool.name}</span>
+                    <span className="osint-desc">{tool.desc}</span>
+                  </a>
+                ))}
+                {intelligenceTab === "bounty" && [
+                  { name: "HackerOne", url: "https://hackerone.com/programs", desc: "Programs" },
+                  { name: "Bugcrowd", url: "https://bugcrowd.com/programs", desc: "Programs" },
+                  { name: "OpenBugBounty", url: "https://openbugbounty.org", desc: "XSS" },
+                  { name: "Intigriti", url: "https://intigriti.com", desc: "EU" },
+                  { name: "YesWeHack", url: "https://yeswehack.com", desc: "Programs" },
+                  { name: "Synack", url: "https://synack.com", desc: "Elite" },
+                ].map(tool => (
+                  <a key={tool.name} href={tool.url} target="_blank" rel="noopener" className="osint-card">
+                    <span className="osint-name">{tool.name}</span>
+                    <span className="osint-desc">{tool.desc}</span>
+                  </a>
+                ))}
+                {intelligenceTab === "patterns" && [
+                  { name: "Temporal", desc: "Time-based" },
+                  { name: "Geographic", desc: "Location-based" },
+                  { name: "Behavioral", desc: "Actor patterns" },
+                  { name: "Network", desc: "Connections" },
+                  { name: "Anomaly", desc: "Outliers" },
+                  { name: "Campaign", desc: "Attacks" },
+                ].map(tool => (
+                  <div key={tool.name} className="osint-card" style={{ cursor: "pointer" }} onClick={() => filterPattern(tool.name)}>
+                    <span className="osint-name">{tool.name}</span>
+                    <span className="osint-desc">{tool.desc}</span>
+                  </div>
+                ))}
+                {intelligenceTab === "research" && [
+                  { name: "DeHashed", url: "https://dehashed.com", desc: "Breaches" },
+                  { name: "HaveIBeenPwned", url: "https://haveibeenpwned.com", desc: "Accounts" },
+                  { name: "Pastebin", url: "https://pastebin.com", desc: "Leaks" },
+                  { name: "GitHub", url: "https://github.com", desc: "Code" },
+                  { name: "SecurityWeek", url: "https://securityweek.com", desc: "News" },
+                  { name: "The Hacker News", url: "https://thehackernews.com", desc: "News" },
+                ].map(tool => (
+                  <a key={tool.name} href={tool.url} target="_blank" rel="noopener" className="osint-card">
+                    <span className="osint-name">{tool.name}</span>
+                    <span className="osint-desc">{tool.desc}</span>
+                  </a>
+                ))}
+                {intelligenceTab === "pentest" && [
+                  { name: "Nmap", desc: "Port Scan" },
+                  { name: "Nikto", desc: "Web Vulns" },
+                  { name: "SQLMap", desc: "SQLi" },
+                  { name: "Amass", desc: "Subdomains" },
+                  { name: "FFuF", desc: "Fuzzing" },
+                  { name: "Metasploit", desc: "Exploits" },
+                ].map(tool => (
+                  <div key={tool.name} className="osint-card" style={{ cursor: "pointer" }} onClick={() => runTool(tool.name)}>
+                    <span className="osint-name">{tool.name}</span>
+                    <span className="osint-desc">{tool.desc}</span>
+                  </div>
+                ))}
+                {intelligenceTab === "reports" && [
+                  { name: "PDF Report", action: "pdf" },
+                  { name: "JSON Export", action: "json" },
+                  { name: "CSV Export", action: "csv" },
+                  { name: "IOC List", action: "ioc" },
+                  { name: "Timeline", action: "timeline" },
+                  { name: "Executive", action: "exec" },
+                ].map(tool => (
+                  <div key={tool.name} className="osint-card" style={{ cursor: "pointer" }} onClick={() => exportReport(tool.action)}>
+                    <span className="osint-name">{tool.name}</span>
+                    <span className="osint-desc">Export</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

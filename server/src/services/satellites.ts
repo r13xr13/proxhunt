@@ -1,115 +1,276 @@
 import axios from "axios";
 import { EventData } from "./conflict";
 
-// CelesTrak real TLE data - compute approximate positions via simplified SGP4
-function computeSatellitePosition(tle1: string, tle2: string): { lat: number; lon: number } | null {
-  try {
-    // Extract inclination and RAAN from TLE for approximate position
-    const inc = parseFloat(tle2.substring(8, 16).trim()); // degrees
-    const raan = parseFloat(tle2.substring(17, 25).trim()); // degrees
-    const meanAnomaly = parseFloat(tle2.substring(43, 51).trim()); // degrees
-    
-    // Very approximate position calculation (not full SGP4)
-    // Use RAAN as approximate longitude reference
-    const lon = ((raan + meanAnomaly) % 360) - 180;
-    // Latitude bounded by inclination
-    const lat = Math.sin((meanAnomaly * Math.PI) / 180) * Math.min(inc, 90);
-    
-    if (isNaN(lat) || isNaN(lon)) return null;
-    return { lat: Math.max(-90, Math.min(90, lat)), lon };
-  } catch {
-    return null;
-  }
+const TWO_PI = 2 * Math.PI;
+const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
+const MINUTES_PER_DAY = 1440;
+const EARTH_RADIUS_KM = 6378.137;
+const MU = 398600.4418;
+
+interface OrbitalParams {
+  name: string;
+  inclination: number;
+  raan: number;
+  period: number;
+  altitude: number;
+  phaseOffset: number;
+  count: number;
+  description: string;
 }
 
-// CelesTrak - free satellite TLE data
+const SATELLITE_CONSTELLATIONS: OrbitalParams[] = [
+  {
+    name: "Starlink Group 1",
+    inclination: 53.0,
+    raan: 0,
+    period: 91.0,
+    altitude: 550,
+    phaseOffset: 0,
+    count: 20,
+    description: "SpaceX Starlink Gen1 Shell 1 — 53° inclination, ~550km LEO. Global broadband. Active over Ukraine.",
+  },
+  {
+    name: "Starlink Group 2", 
+    inclination: 70.0,
+    raan: 90,
+    period: 93.5,
+    altitude: 570,
+    phaseOffset: 15,
+    count: 10,
+    description: "SpaceX Starlink polar shell — 70° inclination for polar coverage. Enables Arctic broadband.",
+  },
+  {
+    name: "GPS Block III",
+    inclination: 55.0,
+    raan: 0,
+    period: 718.5,
+    altitude: 20200,
+    phaseOffset: 0,
+    count: 8,
+    description: "US NAVSTAR GPS Block III — M-Code military GPS. Higher accuracy, longer lifespan.",
+  },
+  {
+    name: "GLONASS-M",
+    inclination: 64.8,
+    raan: 0,
+    period: 675.7,
+    altitude: 19100,
+    phaseOffset: 0,
+    count: 8,
+    description: "Russian GLONASS-M navigation — GPS alternative. 64.8° inclination, 3 orbital planes.",
+  },
+  {
+    name: "Galileo",
+    inclination: 56.0,
+    raan: 0,
+    period: 845.0,
+    altitude: 23222,
+    phaseOffset: 0,
+    count: 6,
+    description: "EU Galileo constellation — civilian GPS alternative. High precision, global coverage.",
+  },
+  {
+    name: "BeiDou-3",
+    inclination: 55.0,
+    raan: 0,
+    period: 845.0,
+    altitude: 21528,
+    phaseOffset: 0,
+    count: 6,
+    description: "Chinese BeiDou-3 — regional + global navigation. 30+ satellites.",
+  },
+  {
+    name: "Iridium NEXT",
+    inclination: 86.4,
+    raan: 0,
+    period: 100.4,
+    altitude: 780,
+    phaseOffset: 0,
+    count: 10,
+    description: "Iridium NEXT — 86.4° polar orbit. 66 active satellites for global voice/data.",
+  },
+  {
+    name: "OneWeb",
+    inclination: 87.9,
+    raan: 90,
+    period: 109.0,
+    altitude: 1200,
+    phaseOffset: 10,
+    count: 8,
+    description: "OneWeb LEO constellation — 87.9° polar. Global broadband, competing with Starlink.",
+  },
+];
+
+function calculatePosition(
+  inclination: number,
+  raan: number,
+  periodMinutes: number,
+  altitudeKm: number,
+  phaseOffset: number,
+  satelliteIndex: number
+): { lat: number; lon: number; alt: number } {
+  const minutesSinceMidnight = Date.now() / 60000;
+  const angularVelocity = TWO_PI / periodMinutes;
+  const phase = (phaseOffset + satelliteIndex * (TWO_PI / 6)) % TWO_PI;
+  const currentAnomaly = (angularVelocity * minutesSinceMidnight + phase) % TWO_PI;
+  const raanCurrent = (raan * DEG2RAD + angularVelocity * minutesSinceMidnight * 0.1) % TWO_PI;
+  const inclinationRad = inclination * DEG2RAD;
+  const trueAnomaly = currentAnomaly;
+  const x = (EARTH_RADIUS_KM + altitudeKm) * Math.cos(trueAnomaly);
+  const y = (EARTH_RADIUS_KM + altitudeKm) * Math.sin(trueAnomaly);
+  const px = x * Math.cos(raanCurrent) - y * Math.cos(inclinationRad) * Math.sin(raanCurrent);
+  const py = x * Math.sin(raanCurrent) + y * Math.cos(inclinationRad) * Math.cos(raanCurrent);
+  const pz = y * Math.sin(inclinationRad);
+  const lon = Math.atan2(py, px);
+  const lat = Math.atan2(pz, Math.sqrt(px * px + py * py));
+  return {
+    lat: lat * RAD2DEG,
+    lon: ((lon * RAD2DEG + 540) % 360) - 180,
+    alt: altitudeKm,
+  };
+}
+
 export async function fetchStarlinkSatellites(): Promise<EventData[]> {
-  try {
-    const response = await axios.get(
-      "https://celestrak.org/SOCRATES/query.php?CODE=starlink&FORMAT=json",
-      { timeout: 12000 }
+  const satellites: EventData[] = [];
+  const constellation = SATELLITE_CONSTELLATIONS.find(c => c.name.includes("Starlink Group 1"))!;
+  
+  for (let i = 0; i < constellation.count; i++) {
+    const pos = calculatePosition(
+      constellation.inclination,
+      constellation.raan + (i * 30),
+      constellation.period,
+      constellation.altitude,
+      constellation.phaseOffset,
+      i
     );
-    // Fallback to known Starlink constellation data since SOCRATES needs login
-    throw new Error("Use TLE endpoint");
-  } catch {
-    // Use CelesTrak TLE format
-    try {
-      const response = await axios.get(
-        "https://celestrak.org/SATCAT/search.php?OBJECT_NAME=STARLINK&FORMAT=json&orderby=LAUNCH_DATE&sort=desc&limit=30",
-        { timeout: 12000 }
+    satellites.push({
+      id: `starlink-g1-${i}`,
+      lat: pos.lat,
+      lon: pos.lon,
+      date: new Date().toISOString(),
+      type: `Starlink Shell 1: #${4500 + i}`,
+      description: constellation.description,
+      source: "Orbital Calc",
+      category: "space" as const,
+      severity: "low" as const,
+    });
+  }
+  
+  const polar = SATELLITE_CONSTELLATIONS.find(c => c.name.includes("Starlink Group 2"))!;
+  for (let i = 0; i < polar.count; i++) {
+    const pos = calculatePosition(
+      polar.inclination,
+      polar.raan + (i * 36),
+      polar.period,
+      polar.altitude,
+      polar.phaseOffset,
+      i
+    );
+    satellites.push({
+      id: `starlink-g2-${i}`,
+      lat: pos.lat,
+      lon: pos.lon,
+      date: new Date().toISOString(),
+      type: `Starlink Polar: #${5000 + i}`,
+      description: polar.description,
+      source: "Orbital Calc",
+      category: "space" as const,
+      severity: "low" as const,
+    });
+  }
+  
+  return satellites;
+}
+
+export async function fetchGPSSatellites(): Promise<EventData[]> {
+  const gps = SATELLITE_CONSTELLATIONS.find(c => c.name.includes("GPS"))!;
+  const satellites: EventData[] = [];
+  
+  for (let plane = 0; plane < 6; plane++) {
+    for (let slot = 0; slot < 4; slot++) {
+      const idx = plane * 4 + slot;
+      if (idx >= gps.count) break;
+      const raan = (plane * 60) % 360;
+      const pos = calculatePosition(
+        gps.inclination,
+        raan,
+        gps.period,
+        gps.altitude,
+        slot * 90,
+        idx
       );
-
-      if (!response.data?.length) return getStarlinkFallback();
-
-      return response.data.slice(0, 20).map((sat: any, i: number) => ({
-        id: `starlink-${sat.OBJECT_ID || i}`,
-        lat: (Math.random() - 0.5) * 110, // Starlink inclined ~53°
-        lon: (Math.random() - 0.5) * 360,
+      satellites.push({
+        id: `gps-${plane}-${slot}`,
+        lat: pos.lat,
+        lon: pos.lon,
         date: new Date().toISOString(),
-        type: `Starlink: ${sat.OBJECT_NAME}`,
-        description: `Starlink constellation — ${sat.COUNTRY_CODE || "US"}, active LEO broadband satellite. Operational over Ukraine and Gaza conflict zones.`,
-        source: "CelesTrak",
+        type: `GPS III: Plane ${plane + 1} Slot ${slot + 1}`,
+        description: gps.description,
+        source: "Orbital Calc",
         category: "space" as const,
         severity: "low" as const,
-      }));
-    } catch {
-      return getStarlinkFallback();
+      });
     }
   }
+  return satellites.slice(0, 12);
 }
 
-// GPS constellation
-export async function fetchGPSSatellites(): Promise<EventData[]> {
-  const GPS_PLANES = [
-    { lat: 55.0, lon: 0, name: "GPS IIF-1" }, { lat: 55.0, lon: 60, name: "GPS IIF-2" },
-    { lat: 55.0, lon: 120, name: "GPS IIF-3" }, { lat: 55.0, lon: 180, name: "GPS IIF-4" },
-    { lat: 55.0, lon: 240, name: "GPS IIF-5" }, { lat: 55.0, lon: 300, name: "GPS IIF-6" },
-    { lat: -55.0, lon: 30, name: "GPS III-1" }, { lat: -55.0, lon: 90, name: "GPS III-2" },
-    { lat: -55.0, lon: 150, name: "GPS III-3" }, { lat: -55.0, lon: 210, name: "GPS III-4" },
-    { lat: -55.0, lon: 270, name: "GPS III-5" }, { lat: -55.0, lon: 330, name: "GPS III-6" },
-  ];
-
-  return GPS_PLANES.map((sat, i) => ({
-    id: `gps-${i}`,
-    lat: sat.lat + (Math.random() - 0.5) * 5,
-    lon: ((sat.lon + (Date.now() / 60000) % 360) % 360) - 180, // simulated movement
-    date: new Date().toISOString(),
-    type: `GPS: ${sat.name}`,
-    description: "US NAVSTAR GPS constellation — 31 operational satellites providing global navigation. Critical military infrastructure.",
-    source: "USSF Space Command",
-    category: "space" as const,
-    severity: "low" as const,
-  }));
-}
-
-// Military satellites from CelesTrak
 export async function fetchMilitarySatellites(): Promise<EventData[]> {
-  try {
-    const response = await axios.get(
-      "https://celestrak.org/SATCAT/search.php?OBJECT_NAME=USA&FORMAT=json&STATUS=DECAYED:0&limit=20",
-      { timeout: 12000 }
+  const satellites: EventData[] = [];
+  
+  const glonass = SATELLITE_CONSTELLATIONS.find(c => c.name.includes("GLONASS"))!;
+  for (let i = 0; i < glonass.count; i++) {
+    const raan = (i * 120) % 360;
+    const pos = calculatePosition(
+      glonass.inclination,
+      raan,
+      glonass.period,
+      glonass.altitude,
+      i * 40,
+      i
     );
-
-    if (!response.data?.length) return getMilSatFallback();
-
-    return response.data.slice(0, 15).map((sat: any, i: number) => ({
-      id: `milsat-${sat.OBJECT_ID || i}`,
-      lat: (Math.random() - 0.5) * 120,
-      lon: (Math.random() - 0.5) * 360,
+    satellites.push({
+      id: `glonass-${i}`,
+      lat: pos.lat,
+      lon: pos.lon,
       date: new Date().toISOString(),
-      type: `US Mil Satellite: ${sat.OBJECT_NAME}`,
-      description: `Classified US military satellite — NORAD ID ${sat.NORAD_CAT_ID}. Surveillance/communications role.`,
-      source: "CelesTrak/Space-Track",
+      type: `GLONASS-M: Slot ${i + 1}`,
+      description: glonass.description,
+      source: "Orbital Calc",
       category: "space" as const,
       severity: "medium" as const,
-    }));
-  } catch {
-    return getMilSatFallback();
+    });
   }
+  
+  const iridium = SATELLITE_CONSTELLATIONS.find(c => c.name.includes("Iridium"))!;
+  for (let i = 0; i < iridium.count; i++) {
+    const raan = (i * 360 / iridium.count) % 360;
+    const pos = calculatePosition(
+      iridium.inclination,
+      raan,
+      iridium.period,
+      iridium.altitude,
+      0,
+      i
+    );
+    satellites.push({
+      id: `iridium-${i}`,
+      lat: pos.lat,
+      lon: pos.lon,
+      date: new Date().toISOString(),
+      type: `Iridium NEXT: #${i + 1}`,
+      description: iridium.description,
+      source: "Orbital Calc",
+      category: "space" as const,
+      severity: "low" as const,
+    });
+  }
+  
+  return satellites;
 }
 
 export async function fetchSatelliteImagerySources(): Promise<EventData[]> {
-  // Remove fake "dot on map" sources - return actual earth observation satellites
   return EARTH_OBS_SATS;
 }
 

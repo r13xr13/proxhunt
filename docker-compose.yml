@@ -2,16 +2,47 @@ services:
   # Conflict Globe Web Application
   web:
     build: .
+    container_name: conflict-globe-web
     ports:
       - "8080:8080"
     env_file:
       - .env
     environment:
       - REACT_APP_CESIUM_ION_TOKEN=${CESIUM_ION_TOKEN:-}
-      - ANTENNA_GATEWAY_URL=${ANTENNA_GATEWAY_URL:-http://localhost:18790}
+      - ANTENNA_GATEWAY_URL=${ANTENNA_GATEWAY_URL:-http://host.docker.internal:18790}
+      - SIGIL7_CONTAINER=${SIGIL7_CONTAINER:-sigil7}
+      - SIGIL7_IP=${SIGIL7_IP:-host.docker.internal}
+      - PORTAINER_URL=${PORTAINER_URL:-http://host.docker.internal:9000}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     networks:
       - conflict-globe
+
+  # Antenna Agent - AI OSINT Agent
+  antenna:
+    image: r13xr/antenna:latest
+    container_name: antenna-agent
+    ports:
+      - "18790:18790"
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://host.docker.internal:8080/api/conflicts}
+      - PORTAINER_URL=http://host.docker.internal:9000
+    volumes:
+      - antenna-data:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - conflict-globe
+    depends_on:
+      - web
 
   # Discord Bot - AI-powered OSINT notifications
   discord-bot:
@@ -24,14 +55,88 @@ services:
     env_file:
       - .env
     environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://web:8080/api/conflicts}
-      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
-      - GITHUB_REPO=${GITHUB_REPO:-r13xr13/conflict-globe.gl}
-      - DEPLOY_CHANNEL_ID=${DEPLOY_CHANNEL_ID:-}
+      - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://host.docker.internal:8080/api/conflicts}
     volumes:
       - discord-data:/app
+    restart: unless-stopped
+    networks:
+      - conflict-globe
+    depends_on:
+      - web
+
+  # Ollama - Local AI Models
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    environment:
+      - OLLAMA_MODELS=/root/.ollama/models
+    restart: unless-stopped
+    networks:
+      - conflict-globe
+
+  # Sigil7 - Kali Linux with Pentest Tools
+  sigil7:
+    image: sigil7:latest
+    container_name: sigil7
+    ports:
+      - "11435:11434"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - sigil7-data:/root
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      conflict-globe:
+        ipv4_address: 172.18.0.10
+    restart: unless-stopped
+    privileged: true
+    depends_on:
+      - ollama
+
+  # Portainer - Container Management
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    volumes:
+      - portainer-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PORTAINER_ADMIN_PASSWORD=${PORTAINER_ADMIN_PASSWORD:-admin123}
+    restart: unless-stopped
+    networks:
+      - conflict-globe
+
+  # MemOS - Self-hosted notes
+  memos:
+    image: neosmemo/memos:stable
+    container_name: memos
+    ports:
+      - "5230:5230"
+    volumes:
+      - memos-data:/var/opt/memos
+    restart: unless-stopped
+    networks:
+      - conflict-globe
+
+  # SearXNG - Meta search engine
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8888:8080"
+    environment:
+      - SEARXNG_BASE_URL=http://searxng:8080
+    volumes:
+      - searxng-data:/etc/searxng
     restart: unless-stopped
     networks:
       - conflict-globe
@@ -39,6 +144,15 @@ services:
 networks:
   conflict-globe:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
 
 volumes:
   discord-data:
+  antenna-data:
+  ollama-data:
+  sigil7-data:
+  portainer-data:
+  memos-data:
+  searxng-data:

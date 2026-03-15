@@ -3,6 +3,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import path from "path";
 import conflictsRouter from "./routes/conflicts";
+import intelligenceRouter from "./routes/intelligence";
 import { startAISStream, stopAISStream, getAISStreamStatus } from "./services/maritime";
 import cors from "cors";
 
@@ -107,6 +108,7 @@ async function sendToWebhook(events: any[]) {
 }
 
 app.use("/api/conflicts", conflictsRouter);
+app.use("/api/intelligence", intelligenceRouter);
 
 const clientBuildPath = path.join(__dirname, NODE_ENV === "production" ? "../../client-build" : "../../client-3d/dist");
 
