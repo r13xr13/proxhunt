@@ -319,6 +319,9 @@ export default function App() {
   // Analytics
   const [showAnalytics, setShowAnalytics] = useState(false);
 
+  // Entity Graph
+  const [showEntityGraph, setShowEntityGraph] = useState(false);
+
 
   // ── Data loading ──
   const loadData = useCallback(async () => {

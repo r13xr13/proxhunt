@@ -3,8 +3,13 @@ const { Client, GatewayIntentBits, EmbedBuilder, Events } = require('discord.js'
 const Parser = require('rss-parser');
 const axios = require('axios');
 const cron = require('node-cron');
+const express = require('express');
+const crypto = require('crypto');
 const ConflictGlobeAI = require('./ai-agent');
 const parser = new Parser();
+
+const app = express();
+app.use(express.json());
 
 const client = new Client({
     intents: [
@@ -16,17 +21,97 @@ const client = new Client({
 const TOKEN = process.env.DISCORD_BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
 const CONFLICT_GLOBE_API = process.env.CONFLICT_GLOBE_API || 'http://localhost:8080/api/conflicts';
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
+const GITHUB_REPO = process.env.GITHUB_REPO || 'r13xr13/conflict-globe.gl';
+const DEPLOY_CHANNEL_ID = process.env.DEPLOY_CHANNEL_ID || process.env.DEV_CHANNEL_ID || '1480238458177064960';
 
 // Channel configurations (from environment variables or defaults)
 const CHANNELS = {
     liveUpdates: process.env.LIVE_UPDATES_CHANNEL_ID || '1482135927043391650',
     threatAlerts: process.env.THREAT_ALERTS_CHANNEL_ID || '1480287712366952509',
     general: process.env.GENERAL_CHANNEL_ID || '1480010187107733545',
-    dev: process.env.DEV_CHANNEL_ID || '1480238458177064960'
+    dev: process.env.DEV_CHANNEL_ID || '1480238458177064960',
+    deploy: DEPLOY_CHANNEL_ID
 };
 
 // Initialize AI agent
 const aiAgent = new ConflictGlobeAI();
+
+// GitHub Webhook endpoint
+app.post('/webhook/github', (req, res) => {
+    const signature = req.headers['x-hub-signature-256'];
+    
+    if (GITHUB_WEBHOOK_SECRET && signature) {
+        const hmac = crypto.createHmac('sha256', GITHUB_WEBHOOK_SECRET);
+        const digest = 'sha256=' + hmac.update(JSON.stringify(req.body)).digest('hex');
+        if (signature !== digest) {
+            console.log('[GitHub] Invalid signature');
+            return res.status(401).send('Invalid signature');
+        }
+    }
+
+    const event = req.headers['x-github-event'];
+    const payload = req.body;
+
+    console.log(`[GitHub] Received event: ${event}`);
+
+    if (event === 'push') {
+        handlePushEvent(payload);
+    }
+
+    res.status(200).send('OK');
+});
+
+async function handlePushEvent(payload) {
+    try {
+        const { commits, repository, pusher, ref } = payload;
+        const branch = ref.replace('refs/heads/', '');
+        
+        if (!commits || commits.length === 0) {
+            console.log('[GitHub] No commits in push event');
+            return;
+        }
+
+        const commitCount = commits.length;
+        const latestCommit = commits[0];
+        const author = latestCommit.author.name;
+        const message = latestCommit.message.substring(0, 200);
+        const url = latestCommit.url;
+
+        const deployChannel = await client.channels.fetch(CHANNELS.deploy);
+        
+        if (deployChannel) {
+            const embed = new EmbedBuilder()
+                .setTitle('New Code Deployed')
+                .setDescription(`*${repository.full_name}* has been updated`)
+                .setColor(0x00FF00)
+                .addFields(
+                    { name: 'Branch', value: `\`${branch}\``, inline: true },
+                    { name: 'Commits', value: `${commitCount} new commit(s)`, inline: true },
+                    { name: 'Author', value: author, inline: true },
+                    { name: 'Latest Commit', value: `[${latestCommit.id.substring(0, 7)}](${url})` },
+                    { name: 'Message', value: message }
+                )
+                .setTimestamp();
+
+            await deployChannel.send({ 
+                content: '@here New code pushed to production!',
+                embeds: [embed] 
+            });
+            
+            console.log(`[Deploy] Notified Discord about ${commitCount} commits`);
+        }
+    } catch (error) {
+        console.error('[Deploy] Error handling push event:', error.message);
+    }
+}
+
+// Start webhook server
+const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 3001;
+app.listen(WEBHOOK_PORT, () => {
+    console.log(`[Webhook] Server listening on port ${WEBHOOK_PORT}`);
+    console.log(`[Webhook] GitHub endpoint: http://localhost:${WEBHOOK_PORT}/webhook/github`);
+});
 
 // AI Analysis function - runs every 30 minutes
 async function runAIAnalysis() {

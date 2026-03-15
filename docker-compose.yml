@@ -19,12 +19,17 @@ services:
       context: ./discord-bot
       dockerfile: Dockerfile
     container_name: conflict-globe-discord
+    ports:
+      - "3001:3001"
     env_file:
       - .env
     environment:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://web:8080/api/conflicts}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+      - GITHUB_REPO=${GITHUB_REPO:-r13xr13/conflict-globe.gl}
+      - DEPLOY_CHANNEL_ID=${DEPLOY_CHANNEL_ID:-}
     volumes:
       - discord-data:/app
     restart: unless-stopped
