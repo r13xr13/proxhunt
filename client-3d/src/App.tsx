@@ -1210,6 +1210,30 @@ export default function App() {
              {activeLeftTab === "filters" && (
                <>
                  <div className="section">
+                   <SectionLabel>Event Overview</SectionLabel>
+                   <div className="stats-graph">
+                     {[
+                       { label: "land", count: events.filter(e => e.category === "land").length, color: "var(--accent)" },
+                       { label: "air", count: events.filter(e => e.category === "air").length, color: "#22c55e" },
+                       { label: "conflict", count: events.filter(e => e.category === "conflict").length, color: "#ef4444" },
+                       { label: "weather", count: events.filter(e => e.category === "weather").length, color: "#06b6d4" },
+                       { label: "cyber", count: events.filter(e => e.category === "cyber").length, color: "#8b5cf6" },
+                       { label: "space", count: events.filter(e => e.category === "space").length, color: "#14b8a6" },
+                     ].map(cat => (
+                       <div
+                         key={cat.label}
+                         className="graph-bar"
+                         style={{ height: `${Math.max(4, (cat.count / Math.max(...events.filter(e => e.category).map(e => 1))) * 60)}px`, background: cat.color }}
+                         title={`${cat.label}: ${cat.count}`}
+                       />
+                     ))}
+                   </div>
+                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.6rem", color: "var(--text-3)", fontFamily: "var(--font-mono)" }}>
+                     {["LAND", "AIR", "CONFLICT", "WEATHER", "CYBER", "SPACE"].map((l, i) => <span key={l}>{l}</span>)}
+                   </div>
+                 </div>
+
+                 <div className="section">
                    <SectionLabel>Filters</SectionLabel>
                    <div className="filter-group">
                      <div className="filter-row">

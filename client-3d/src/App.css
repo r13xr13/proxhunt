@@ -448,3 +448,48 @@ input[type=date].text-input { font-family: var(--font-mono); font-size: 0.72rem;
   color: var(--text-3);
   font-family: var(--font-mono);
 }
+
+/* Filter Styles */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface1);
+  border-radius: 6px;
+  color: var(--text-2);
+  font-size: 0.82rem;
+}
+.filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Stats Graph */
+.stats-graph {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 80px;
+  padding: 12px;
+  background: var(--surface1);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+.graph-bar {
+  flex: 1;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+  min-height: 4px;
+  transition: height 0.3s ease;
+}
+.graph-bar.severity-low { background: var(--green); }
+.graph-bar.severity-medium { background: #fbbf24; }
+.graph-bar.severity-high { background: var(--orange); }
+.graph-bar.severity-critical { background: var(--red); }
