@@ -63,8 +63,8 @@ const MAJOR_CITY_BUILDINGS: CityBuilding[] = [
   { name: "CN Tower", lat: 43.6426, lon: -79.3871, height: 553, floors: 147, year: 1976, usage: "communications/tourist", city: "Toronto", country: "Canada" },
   { name: "First Canadian Place", lat: 43.6479, lon: -79.3791, height: 298, floors: 72, year: 1975, usage: "office", city: "Toronto", country: "Canada" },
   
-  // Sydney
-  { name: "Sydney Tower", lat: -33.8688, lon: 151.2093, height: 309, floors: ???, year: 1981, usage: "observation/restaurant", city: "Sydney", country: "Australia" },
+    // Sydney
+    { name: "Sydney Tower", lat: -33.8688, lon: 151.2093, height: 309, floors: 0, year: 1981, usage: "observation/restaurant", city: "Sydney", country: "Australia" },
   
   // Singapore
   { name: "Guoco Tower", lat: 1.2797, lon: 103.8511, height: 290, floors: 65, year: 2016, usage: "mixed", city: "Singapore", country: "Singapore" },

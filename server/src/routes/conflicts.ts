@@ -20,6 +20,7 @@ import { fetchGdeltevents } from "../services/gdelt";
 import { fetchFlightData, fetchMilitaryFlights, fetchAirspaceAlerts, fetchDroneZones } from "../services/flights";
 import { fetchCityBuildings, fetchCityDensityPoints, fetchUrbanExtents } from "../services/city";
 import { fetchWikidataConflicts, fetchWikidataLocations } from "../services/wikidata";
+import { fetchAntennaSignals, fetchAntennaStatus } from "../services/antenna";
 
 const router = Router();
 
@@ -142,6 +143,8 @@ async function getRadioEvents(): Promise<EventData[]> {
   return cached("radio", TTL.slow, async () => {
     const results = await Promise.allSettled([
       fetchSDRSignals(), fetchRadioHFMidEast(), fetchRadioUkraine(), fetchGlobalSDRNodes(),
+      fetchHFActiveFrequencies(), fetchAirbandFrequencies(), fetchSignalIntel(),
+      fetchAntennaSignals(), fetchAntennaStatus()
     ]);
     return results.flatMap(r => r.status === "fulfilled" ? r.value : []);
   });

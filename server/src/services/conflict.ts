@@ -17,6 +17,32 @@ export interface EventData {
   entities?: string[];
   streamUrl?: string;
   thumbUrl?: string;
+  // Additional metadata for extended services
+  buildingHeight?: number;
+  buildingFloors?: number;
+  buildingYear?: number;
+  buildingUsage?: string;
+  buildingName?: string;
+  buildingCity?: string;
+  buildingCountry?: string;
+  cityPopulation?: number;
+  cityHeight?: number;
+  cityFloors?: number;
+  cityName?: string;
+  urbanRegion?: string;
+  wikidataId?: string;
+  // Antenna-specific metadata
+  frequency?: number;
+  power?: number;
+  bandwidth?: number;
+  modulation?: string;
+  signalType?: string;
+  antennaId?: string;
+  confidence?: number;
+  version?: string;
+  status?: string;
+  uptime?: string;
+  signalsPerMinute?: number;
 }
 
 // Real GDELT API - returns geolocated articles about conflict events
