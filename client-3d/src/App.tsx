@@ -1144,23 +1144,9 @@ export default function App() {
                      <input type="range" min={1} max={10} value={pointSize} onChange={e => setPointSize(+e.target.value)} />
                    </div>
                    <CheckRow checked={enableClustering} onChange={v => setEnableClustering(v)} icon="M" label="Point Clustering (disabled: breaks clicks)" />
-                 </div>
-                 
-                 <div className="section">
-                   <SectionLabel>AI Chat</SectionLabel>
-                   <div id="ai-chat-container" style={{ height: 300, overflow: "auto", padding: "10px", background: "var(--surface)", borderRadius: 6, marginBottom: 10 }}>
-                     {/* AI Chat messages will be rendered here */}
-                     <div id="ai-chat-messages" style={{ minHeight: 200 }}>
-                       {/* Messages will be appended here */}
-                     </div>
-                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                       <input type="text" id="ai-chat-input" placeholder="Ask the AI about conflicts, signals, or anything..." style={{ flex: 1, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, background: "var(--surface2)", color: "var(--text)" }} />
-                       <button id="ai-chat-send" className="full-btn full-btn-primary" style={{ padding: "8px 16px", fontSize: "0.875rem" }}>Send</button>
-                     </div>
-                   </div>
-                 </div>
-               </>
-             )}
+                  </div>
+                </>
+              )}
 
             {/* ── Categories tab ── */}
             {activeLeftTab === "categories" && (
@@ -1807,6 +1793,7 @@ export default function App() {
               ["NET", "Network", () => setShowEntityGraph(p => !p), showEntityGraph],
               ["TIME", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
               ["VOICE", "Voice", () => setVoiceEnabled(p => !p), voiceEnabled],
+              ["DISC", "Discord", () => window.open("https://discord.gg/ConflictGlobe", "_blank"), false],
               ["MARK", "Markers", () => {}, showCollaborators],
               ["TEAM", "Team", () => setShowCollaborators(p => !p), showCollaborators],
               ["RPT", "Report", () => setShowReportPanel(p => !p), showReportPanel],
