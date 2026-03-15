@@ -322,6 +322,9 @@ export default function App() {
   // Entity Graph
   const [showEntityGraph, setShowEntityGraph] = useState(false);
 
+  // Time Machine
+  const [showTimeMachine, setShowTimeMachine] = useState(false);
+
 
   // ── Data loading ──
   const loadData = useCallback(async () => {
