@@ -1,4 +1,5 @@
 services:
+  # Conflict Globe Web Application
   web:
     build: .
     ports:
@@ -6,5 +7,15 @@ services:
     env_file:
       - .env
     environment:
-      - REACT_APP_CESIUM_ION_TOKEN=your_cesium_ion_token_here
+      - REACT_APP_CESIUM_ION_TOKEN=${CESIUM_ION_TOKEN:-}
+      # Antenna Agent Gateway URL (optional - for AI agent integration)
+      # Set ANTENNA_GATEWAY_URL in .env to connect to external Antenna agent
+      # Example: ANTENNA_GATEWAY_URL=http://host.docker.internal:18790
+      - ANTENNA_GATEWAY_URL=${ANTENNA_GATEWAY_URL:-}
     restart: unless-stopped
+    networks:
+      - conflict-globe
+
+networks:
+  conflict-globe:
+    driver: bridge
