@@ -11,7 +11,7 @@
 [![npm](https://img.shields.io/badge/npm-%40c0smic%2Fconflict--globe-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/@c0smic/conflict-globe)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Demo](#demo) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Contributing](#contributing)
+[Demo](#demo) · [Quick Start](#quick-start) · [Configuration](#configuration) · [Architecture](#architecture) · [Contributing](#contributing)
 
 <br/>
 
@@ -25,7 +25,7 @@
 
 Conflict Globe is an open-source intelligence (OSINT) platform that aggregates and visualizes global conflict, maritime, air, cyber, and geopolitical events in real time on an interactive 3D globe. Built for analysts, researchers, and journalists who need a high-signal, low-latency view of world events.
 
-> **Demo**: [▶ Watch on YouTube](https://www.youtube.com/watch?v=EvRL27Z5uh4)
+> **Demo**: [Watch on YouTube](https://www.youtube.com/watch?v=EvRL27Z5uh4)
 >
 > **Discord**: [Join the community](https://discord.gg/zRyBE6S7YG)
 
@@ -43,13 +43,13 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 
 | Layer | Description |
 |---|---|
-| **Points** | Individual event markers with per-category color coding |
-| **HexBins** | Hexagonal spatial clustering for density analysis |
-| **Heatmap** | Continuous density surface from event distribution |
-| **Rings** | Animated pulse rings at active event locations |
-| **Arcs** | Directional connections between correlated events |
-| **Paths** | Movement and trajectory tracking |
-| **Polygons** | Regional boundary and aggregation overlays |
+| Points | Individual event markers with per-category color coding |
+| HexBins | Hexagonal spatial clustering for density analysis |
+| Heatmap | Continuous density surface from event distribution |
+| Rings | Animated pulse rings at active event locations |
+| Arcs | Directional connections between correlated events |
+| Paths | Movement and trajectory tracking |
+| Polygons | Regional boundary and aggregation overlays |
 
 ### Globe Controls
 
@@ -66,7 +66,13 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 - Timeline slider for temporal filtering
 - Category filter toggles
 - Full-text search across all loaded events
-- Export to **JSON**, **GeoJSON**, or **CSV**
+- Export to JSON, GeoJSON, or CSV
+
+### Antenna Agent
+
+- Built-in AI chat interface accessible from the left panel
+- Supports OpenRouter (cloud) and Ollama (self-hosted) backends
+- Intelligent analysis and automation of OSINT events
 
 ### Event Categories
 
@@ -76,9 +82,9 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 
 ## Quick Start
 
-### npm (Easiest)
+### Option 1: npm
 
-Requires Node.js ≥ 18.
+Requires Node.js >= 18.
 
 ```bash
 npm install -g @c0smic/conflict-globe
@@ -87,7 +93,7 @@ conflict-globe start
 
 Open `http://localhost:8080` in your browser.
 
-### Docker
+### Option 2: Docker
 
 Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
 
@@ -95,10 +101,17 @@ Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
 git clone https://github.com/r13xr13/conflict-globe.gl.git
 cd conflict-globe.gl
 docker compose up -d
-open http://localhost:8080
 ```
 
-### Local Development
+Open `http://localhost:8080` in your browser.
+
+This starts:
+- Conflict Globe web app on port 8080
+- Antenna Agent gateway on port 18790
+
+### Option 3: Local Development
+
+Requires Node.js >= 18.
 
 ```bash
 git clone https://github.com/r13xr13/conflict-globe.gl.git
@@ -122,24 +135,73 @@ cd client-3d && npm run dev
 Create a `.env` file in the `server/` directory. All API keys are optional — many data feeds work without authentication.
 
 ```env
+# Server
+PORT=8080
+NODE_ENV=production
+
 # API Keys (optional)
 NEWS_API_KEY=your_key_here
 GDELT_KEY=your_key_here
-
-# Server
-PORT=8080
-NODE_ENV=development
+OPENSKY_CLIENT_ID=
+OPENSKY_CLIENT_SECRET=
+ACLED_KEY=
+ACLED_EMAIL=
+AISSTREAM_KEY=
+WINDY_KEY=
 ```
 
-### Data Sources
+### AI Provider
+
+Choose one AI backend for the Antenna Agent. OpenRouter is recommended for cloud deployments, Ollama for self-hosted.
+
+**OpenRouter (Cloud)**
+
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=openai/gpt-4o
+```
+
+Sign up at [openrouter.ai](https://openrouter.ai) to obtain an API key.
+
+**Ollama (Self-Hosted)**
+
+```env
+OLLAMA_BASE_URL=https://your-ollama-server.com
+OLLAMA_MODEL=llama3.2:latest
+```
+
+See [Ollama documentation](https://ollama.ai) for setup instructions.
+
+### Radio Signal Monitoring (Optional)
+
+The platform supports integration with external radio frequency monitoring systems (SDR/SIGINT). If configured, live signal data will appear on the globe.
+
+```env
+ANTENNA_API_URL=http://your-antenna-service:port
+```
+
+Required endpoints on your antenna service:
+
+| Endpoint | Description |
+|---|---|
+| `/api/signals` | Returns radio signals with frequency, location, and type |
+| `/api/status` | Returns antenna system status |
+
+If `ANTENNA_API_URL` is not set, the service is skipped and all other data sources continue to function normally.
+
+---
+
+## Data Sources
 
 | Source | Domain |
 |---|---|
 | [GDELT Project](https://www.gdeltproject.org/) | Global events & media |
 | [UCDP Armed Conflict](https://ucdp.uu.se/) | Conflict datasets |
-| MarineTraffic | Maritime vessel tracking |
-| ADS-B Exchange | Live aircraft positions |
-| Satellite tracking feeds | Space domain awareness |
+| MarineTraffic / AISStream | Maritime vessel tracking |
+| OpenSky Network / ADS-B Exchange | Live aircraft positions |
+| Space-Track / CelesTrak | Satellite tracking |
+| NOAA / Windy.com | Weather data |
+| USGS / EMSC | Seismic events |
 | RSS news aggregation | Open-source media feeds |
 
 ---
@@ -160,7 +222,8 @@ conflict-globe.gl/
 │   └── package.json
 ├── discord-bot/        # AI-powered Discord bot
 │   ├── index.js        # Bot commands & scheduler
-│   └── ai-agent.js     # Ollama AI integration
+│   └── ai-agent.js     # AI integration
+├── antenna-agent/      # Antenna AI agent framework
 ├── globe.gl/           # Vendored custom globe.gl build
 ├── Dockerfile
 └── docker-compose.yml
@@ -174,11 +237,12 @@ conflict-globe.gl/
 
 | Layer | Technologies |
 |---|---|
-| **Frontend** | React, Vite, react-globe.gl, Three.js, TypeScript |
-| **Backend** | Node.js, Express, TypeScript, Socket.io |
-| **Bot** | Discord.js, Ollama, node-cron |
-| **Data** | Axios, RSS parsers, REST OSINT APIs |
-| **Infrastructure** | Docker, Docker Compose, Railway |
+| Frontend | React, Vite, react-globe.gl, Three.js, TypeScript |
+| Backend | Node.js, Express, TypeScript, Socket.io |
+| AI | OpenRouter, Ollama, Antenna Agent |
+| Bot | Discord.js, node-cron |
+| Data | Axios, RSS parsers, REST OSINT APIs |
+| Infrastructure | Docker, Docker Compose |
 
 ---
 
@@ -196,118 +260,9 @@ conflict-globe.gl/
 
 | Key | Action |
 |---|---|
-| `R` | Force data refresh |
-| `F` | Toggle sidebar |
-| `H` | Toggle dark / light theme |
-
----
-
-## Deployment
-
-### Railway (Cloud — Recommended)
-
-1. Connect your GitHub repo to [Railway](https://railway.app)
-2. Railway auto-detects the Dockerfile — no extra config needed
-3. Add environment variables in the Railway dashboard
-4. Every push to `main` triggers an automatic redeploy
-
-**Required Environment Variables:**
-```env
-PORT=8080
-NODE_ENV=production
-```
-
-**AI Configuration:**
-Choose ONE AI provider - OpenRouter (cloud) or Ollama (self-hosted).
-
-**Option 1: OpenRouter (Recommended for Production)**
-```env
-OPENROUTER_API_KEY=your-openrouter-api-key
-OPENROUTER_MODEL=openai/gpt-4o
-```
-Get API key from https://openrouter.ai/keys
-
-**Option 2: Ollama (Self-Hosted)**
-```env
-OLLAMA_BASE_URL=http://host.docker.internal:11434  # For local machine access
-# OR
-OLLAMA_BASE_URL=https://your-ollama-server.com      # For remote server
-OLLAMA_MODEL=llama3.2:latest
-```
-
-**Setting up AI Providers:**
-
-*OpenRouter (Easiest for Production)*
-1. Sign up at https://openrouter.ai
-2. Get an API key from the dashboard
-3. Set `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` in Railway
-4. No server setup needed - works instantly
-
-*Ollama (Self-Hosted)*
-1. Local Machine with Tunnel (Development)
-   - Install Ollama on your local machine
-   - Expose via tunnel (Cloudflare Tunnel, ngrok):
-     ```bash
-     ngrok http 11434
-     ```
-   - Set `OLLAMA_BASE_URL` to the ngrok URL
-
-2. Remote VPS/Server
-   - Install Ollama on a remote server/VPS
-   - Configure to listen on all interfaces:
-     ```bash
-     OLLAMA_HOST=0.0.0.0 ollama serve
-     ```
-   - Set `OLLAMA_BASE_URL` to your server's IP/domain
-   - Ensure firewall allows port 11434
-
-3. Railway Ollama Service
-   - Deploy Ollama as a separate Railway service with GPU support
-
-**Antenna Agent Integration**
-Conflict Globe includes the Antenna AI Agent framework for intelligent analysis and automation.
-
-**Running with Docker Compose:**
-```bash
-docker compose up -d
-```
-
-This starts:
-- Conflict Globe web app on port 8080
-- Antenna Agent gateway on port 18790
-
-**Antenna Agent Configuration:**
-Set in your `.env` file:
-```env
-# AI Provider for Antenna Agent
-OPENROUTER_API_KEY=your-openrouter-api-key
-OPENROUTER_MODEL=openai/gpt-4o
-# OR
-OLLAMA_BASE_URL=http://host.docker.internal:11434
-OLLAMA_MODEL=llama3.2:latest
-```
-
-**Accessing the Antenna Agent:**
-- Open Conflict Globe at http://localhost:8080
-- Click `🤖 AI Chat` tab in the left panel
-- Chat with the Antenna Agent (connects to port 18790)
-
-**Radio Signal Monitoring (Optional)**
-The antenna service provides radio signal data for the globe. It's optional - if not configured, other radio sources will still work.
-
-**Note:** This is for radio frequency monitoring systems (SDR/SIGINT), not the Antenna AI Agent framework.
-
-**Required API Endpoints:**
-- `/api/signals` - Returns radio signals with frequency, location, type, etc.
-- `/api/status` - Returns antenna system status
-
-If you don't have a radio monitoring system, leave `ANTENA_API_URL` blank and the service will be skipped.
-
-### Self-Hosted
-
-```bash
-docker compose up -d
-```
+| R | Force data refresh |
+| F | Toggle sidebar |
+| H | Toggle dark / light theme |
 
 ---
 
@@ -333,3 +288,5 @@ Distributed under the [MIT License](LICENSE).
 - [globe.gl](https://github.com/vasturiano/globe.gl) — WebGL globe rendering by Vasco Asturiano
 - [three-globe](https://github.com/vasturiano/three-globe) — Three.js globe plugin
 - [GDELT Project](https://www.gdeltproject.org/) — Primary open-source event data provider
+- [Ollama](https://ollama.ai) — Local AI inference
+- [OpenRouter](https://openrouter.ai) — Cloud AI routing
