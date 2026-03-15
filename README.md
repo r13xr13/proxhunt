@@ -264,7 +264,35 @@ OLLAMA_MODEL=llama3.2:latest
 3. Railway Ollama Service
    - Deploy Ollama as a separate Railway service with GPU support
 
-**Antenna System (Optional)**
+**Antenna Agent Integration**
+Conflict Globe includes the Antenna AI Agent framework for intelligent analysis and automation.
+
+**Running with Docker Compose:**
+```bash
+docker compose up -d
+```
+
+This starts:
+- Conflict Globe web app on port 8080
+- Antenna Agent gateway on port 18790
+
+**Antenna Agent Configuration:**
+Set in your `.env` file:
+```env
+# AI Provider for Antenna Agent
+OPENROUTER_API_KEY=your-openrouter-api-key
+OPENROUTER_MODEL=openai/gpt-4o
+# OR
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+OLLAMA_MODEL=llama3.2:latest
+```
+
+**Accessing the Antenna Agent:**
+- Open Conflict Globe at http://localhost:8080
+- Click `🤖 AI Chat` tab in the left panel
+- Chat with the Antenna Agent (connects to port 18790)
+
+**Radio Signal Monitoring (Optional)**
 The antenna service provides radio signal data for the globe. It's optional - if not configured, other radio sources will still work.
 
 **Note:** This is for radio frequency monitoring systems (SDR/SIGINT), not the Antenna AI Agent framework.
@@ -272,26 +300,6 @@ The antenna service provides radio signal data for the globe. It's optional - if
 **Required API Endpoints:**
 - `/api/signals` - Returns radio signals with frequency, location, type, etc.
 - `/api/status` - Returns antenna system status
-
-**Example signal data structure:**
-```json
-{
-  "signals": [
-    {
-      "id": "signal-1",
-      "type": "HF Military",
-      "frequency": 11230,
-      "latitude": 48.8566,
-      "longitude": 2.3522,
-      "timestamp": "2026-03-14T12:00:00Z",
-      "description": "USAF CENTCOM HF comms",
-      "power": 45,
-      "bandwidth": 2400,
-      "modulation": "SSB"
-    }
-  ]
-}
-```
 
 If you don't have a radio monitoring system, leave `ANTENA_API_URL` blank and the service will be skipped.
 
