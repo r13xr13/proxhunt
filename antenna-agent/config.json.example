@@ -113,7 +113,7 @@
       "enabled": true,
       "token": "YOUR_TELEGRAM_BOT_TOKEN",
       "allow_from": [],
-      "chat_id": "7774828058",
+      "chat_id": "TELEGRAM_CHAT_ID_PLACEHOLDER",
       "max_response_chars": 4000
     },
     "discord": {

@@ -34,7 +34,7 @@ if [ -f "$HOME/.antenna/config.json" ]; then
     if [ -n "$TOKEN" ] && [ "$TOKEN" != "" ]; then
         MESSAGE=$(/home/c0smic/.local/bin/antenna agent -m "$PROMPT" 2>/dev/null | head -5)
         curl -s -X POST "https://api.telegram.org/bot$TOKEN/sendMessage" \
-            -d "chat_id=8419317249" \
+            -d "chat_id=TELEGRAM_CHAT_ID_PLACEHOLDER" \
             -d "text=$MESSAGE" >> "$LOG_DIR/promotion.log" 2>&1
         echo "[$(date)] Posted to Telegram" >> "$LOG_DIR/promotion.log"
     fi

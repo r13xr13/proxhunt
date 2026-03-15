@@ -200,7 +200,7 @@ Configured in ~/.antenna/config.json:
 
 ### Telegram
 - Bot: @OpenPincher_bot
-- Chat ID: 7774828058
+- Chat ID: TELEGRAM_CHAT_ID_PLACEHOLDER
 - Token: In config.json
 
 ### Discord

@@ -77,7 +77,7 @@ params:
 
 ## Script
 
-async function post_telegram({ message, chat_id = '8419317249' }) {
+async function post_telegram({ message, chat_id = 'TELEGRAM_CHAT_ID_PLACEHOLDER' }) {
   const configPath = '~/.antenna/config.json';
   const { stdout: config } = await exec(\`cat \${configPath}\`);
   const configData = JSON.parse(config);
