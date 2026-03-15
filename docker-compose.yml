@@ -8,7 +8,6 @@ services:
       - .env
     environment:
       - REACT_APP_CESIUM_ION_TOKEN=${CESIUM_ION_TOKEN:-}
-      # Antenna Agent Gateway URL - points to antenna-agent service
       - ANTENNA_GATEWAY_URL=http://antenna-agent:18790
     restart: unless-stopped
     depends_on:

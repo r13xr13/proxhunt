@@ -267,3 +267,50 @@ export async function fetchWindyCameras(): Promise<EventData[]> {
 
 export async function fetchEarthCamFeeds(): Promise<EventData[]> { return []; }
 export async function fetchWebCamTaxi(): Promise<EventData[]> { return []; }
+
+// Camera ViewBox - Define regions of interest within camera feeds
+export interface CameraViewBox {
+  id: string;
+  camera_id: string;
+  position: { x: number; y: number; width: number; height: number };
+  label: string;
+  detected_objects?: string[];
+  alert_on_motion?: boolean;
+}
+
+// Get viewboxes for a specific camera
+export function getCameraViewBoxes(cameraId: string): CameraViewBox[] {
+  const viewBoxes: Record<string, CameraViewBox[]> = {
+    'cam-kyiv-maidan': [
+      { id: 'vb-kyiv-1', camera_id: 'cam-kyiv-maidan', position: { x: 0, y: 0, width: 50, height: 100 }, label: 'Main Square Area', alert_on_motion: true },
+      { id: 'vb-kyiv-2', camera_id: 'cam-kyiv-maidan', position: { x: 50, y: 0, width: 50, height: 100 }, label: 'Side Street Entry', alert_on_motion: true }
+    ],
+    'cam-suez-ismailia': [
+      { id: 'vb-suez-1', camera_id: 'cam-suez-ismailia', position: { x: 0, y: 30, width: 40, height: 40 }, label: 'Lock Entrance', alert_on_motion: true },
+      { id: 'vb-suez-2', camera_id: 'cam-suez-ismailia', position: { x: 40, y: 30, width: 40, height: 40 }, label: 'Lock Exit', alert_on_motion: true }
+    ],
+    'cam-hong-kong-1': [
+      { id: 'vb-hk-1', camera_id: 'cam-hong-kong-1', position: { x: 0, y: 0, width: 100, height: 30 }, label: 'Shipping Lanes', alert_on_motion: true },
+      { id: 'vb-hk-2', camera_id: 'cam-hong-kong-1', position: { x: 0, y: 30, width: 100, height: 70 }, label: 'Port Terminal' }
+    ]
+  };
+
+  return viewBoxes[cameraId] || [];
+}
+
+// Detect objects in camera viewbox (mock for now)
+export interface DetectedObject {
+  class: string;
+  confidence: number;
+  bounding_box: { x: number; y: number; width: number; height: number };
+  timestamp: string;
+}
+
+export async function detectObjectsInViewBox(cameraId: string, viewBoxId: string): Promise<DetectedObject[]> {
+  // In production, this would connect to a real computer vision service
+  // For now, return mock data
+  return [
+    { class: 'vehicle', confidence: 0.92, bounding_box: { x: 10, y: 20, width: 30, height: 20 }, timestamp: new Date().toISOString() },
+    { class: 'person', confidence: 0.88, bounding_box: { x: 50, y: 40, width: 10, height: 30 }, timestamp: new Date().toISOString() }
+  ];
+}
