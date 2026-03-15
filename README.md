@@ -2,16 +2,14 @@
 
 # Conflict Globe
 
-**A real-time 3D OSINT visualization platform for global conflict and geopolitical events**
+A real-time 3D OSINT visualization platform for global conflict and geopolitical events.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/r13xr13/conflict-globe.gl/releases)
 [![TypeScript](https://img.shields.io/badge/TypeScript-98%25-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
-[![npm](https://img.shields.io/badge/npm-%40c0smic%2Fconflict--globe-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/@c0smic/conflict-globe)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Demo](#demo) · [Quick Start](#quick-start) · [Configuration](#configuration) · [Architecture](#architecture) · [Contributing](#contributing)
+[Demo](#demo) - [Quick Start](#quick-start) - [Configuration](#configuration) - [Architecture](#architecture)
 
 <br/>
 
@@ -25,10 +23,6 @@
 
 Conflict Globe is an open-source intelligence (OSINT) platform that aggregates and visualizes global conflict, maritime, air, cyber, and geopolitical events in real time on an interactive 3D globe. Built for analysts, researchers, and journalists who need a high-signal, low-latency view of world events.
 
-> **Demo**: [Watch on YouTube](https://www.youtube.com/watch?v=EvRL27Z5uh4)
->
-> **Discord**: [Join the community](https://discord.gg/zRyBE6S7YG)
-
 ---
 
 ## Features
@@ -36,7 +30,7 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 ### Real-Time Data Pipeline
 
 - Live OSINT feed aggregation from multiple independent sources
-- WebSocket (Socket.io) push updates — no client polling required
+- WebSocket (Socket.io) push updates - no client polling required
 - Configurable auto-refresh intervals per source
 
 ### Visualization Layers
@@ -68,7 +62,7 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 - Full-text search across all loaded events
 - Export to JSON, GeoJSON, or CSV
 
-### Antenna Agent
+### AI Integration
 
 - Built-in AI chat interface accessible from the left panel
 - Supports OpenRouter (cloud) and Ollama (self-hosted) backends
@@ -76,26 +70,15 @@ Conflict Globe is an open-source intelligence (OSINT) platform that aggregates a
 
 ### Event Categories
 
-`Conflict` · `Maritime` · `Air` · `Cyber` · `Land` · `Space` · `Radio` · `Weather` · `Earthquakes` · `Social Media`
+Conflict, Maritime, Air, Cyber, Land, Space, Radio, Weather, Earthquakes, Social Media
 
 ---
 
 ## Quick Start
 
-### Option 1: npm
+### Docker
 
-Requires Node.js >= 18.
-
-```bash
-npm install -g @c0smic/conflict-globe
-conflict-globe start
-```
-
-Open `http://localhost:8080` in your browser.
-
-### Option 2: Docker
-
-Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
+Requires Docker and Docker Compose.
 
 ```bash
 git clone https://github.com/r13xr13/conflict-globe.gl.git
@@ -103,13 +86,9 @@ cd conflict-globe.gl
 docker compose up -d
 ```
 
-Open `http://localhost:8080` in your browser.
+Open http://localhost:8080 in your browser.
 
-This starts:
-- Conflict Globe web app on port 8080
-- Antenna Agent gateway on port 18790
-
-### Option 3: Local Development
+### Local Development
 
 Requires Node.js >= 18.
 
@@ -121,10 +100,10 @@ cd conflict-globe.gl
 cd client-3d && npm install
 cd ../server && npm install
 
-# Terminal 1 — Backend
+# Terminal 1 - Backend
 cd server && npm run dev
 
-# Terminal 2 — Frontend
+# Terminal 2 - Frontend
 cd client-3d && npm run dev
 ```
 
@@ -132,25 +111,28 @@ cd client-3d && npm run dev
 
 ## Configuration
 
-Create a `.env` file in the `server/` directory. All API keys are optional — many data feeds work without authentication.
+Copy `.env.example` to `.env` and configure your settings. All API keys are optional - many data feeds work without authentication.
 
 ```env
 # Server
 PORT=8080
 NODE_ENV=production
 
-# API Keys (optional)
-NEWS_API_KEY=your_key_here
-GDELT_KEY=your_key_here
+# Cesium Ion (optional - for 3D globe tiles)
+REACT_APP_CESIUM_ION_TOKEN=
+
+# Data Source API Keys (optional)
+NEWS_API_KEY=
+GDELT_KEY=
+WINDY_KEY=
 OPENSKY_CLIENT_ID=
 OPENSKY_CLIENT_SECRET=
 ACLED_KEY=
 ACLED_EMAIL=
 AISSTREAM_KEY=
-WINDY_KEY=
 ```
 
-### AI Provider
+### AI Provider Configuration
 
 Choose one AI backend for the Antenna Agent. OpenRouter is recommended for cloud deployments, Ollama for self-hosted.
 
@@ -166,7 +148,7 @@ Sign up at [openrouter.ai](https://openrouter.ai) to obtain an API key.
 **Ollama (Self-Hosted)**
 
 ```env
-OLLAMA_BASE_URL=https://your-ollama-server.com
+OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=llama3.2:latest
 ```
 
@@ -184,10 +166,10 @@ Required endpoints on your antenna service:
 
 | Endpoint | Description |
 |---|---|
-| `/api/signals` | Returns radio signals with frequency, location, and type |
-| `/api/status` | Returns antenna system status |
+| /api/signals | Returns radio signals with frequency, location, and type |
+| /api/status | Returns antenna system status |
 
-If `ANTENNA_API_URL` is not set, the service is skipped and all other data sources continue to function normally.
+If ANTENNA_API_URL is not set, the service is skipped and all other data sources continue to function normally.
 
 ---
 
@@ -195,8 +177,8 @@ If `ANTENNA_API_URL` is not set, the service is skipped and all other data sourc
 
 | Source | Domain |
 |---|---|
-| [GDELT Project](https://www.gdeltproject.org/) | Global events & media |
-| [UCDP Armed Conflict](https://ucdp.uu.se/) | Conflict datasets |
+| GDELT Project | Global events and media |
+| UCDP Armed Conflict | Conflict datasets |
 | MarineTraffic / AISStream | Maritime vessel tracking |
 | OpenSky Network / ADS-B Exchange | Live aircraft positions |
 | Space-Track / CelesTrak | Satellite tracking |
@@ -212,24 +194,24 @@ If `ANTENNA_API_URL` is not set, the service is skipped and all other data sourc
 conflict-globe.gl/
 ├── client-3d/          # React + Vite frontend (TypeScript)
 │   ├── src/
-│   │   └── App.tsx     # Root globe component & state
+│   │   └── App.tsx     # Root globe component and state
 │   └── package.json
 ├── server/             # Express + TypeScript backend
 │   ├── src/
-│   │   ├── index.ts    # Entry point & Socket.io setup
+│   │   ├── index.ts    # Entry point and Socket.io setup
 │   │   ├── routes/     # REST API endpoints
 │   │   └── services/   # Per-source OSINT data fetchers
 │   └── package.json
 ├── discord-bot/        # AI-powered Discord bot
-│   ├── index.js        # Bot commands & scheduler
+│   ├── index.js        # Bot commands and scheduler
 │   └── ai-agent.js     # AI integration
 ├── antenna-agent/      # Antenna AI agent framework
-├── globe.gl/           # Vendored custom globe.gl build
+├── globe.gl/          # Vendored custom globe.gl build
 ├── Dockerfile
 └── docker-compose.yml
 ```
 
-**Data flow:** OSINT sources → Express REST & Socket.io → React client → globe.gl WebGL renderer
+**Data flow:** OSINT sources - Express REST and Socket.io - React client - globe.gl WebGL renderer
 
 ---
 
@@ -249,7 +231,7 @@ conflict-globe.gl/
 ## Performance
 
 - Client-side point clustering keeps render time stable at large event volumes
-- Configurable max point count (50–500) to match hardware capability
+- Configurable max point count (50-500) to match hardware capability
 - Auto-refresh throttling prevents API rate-limit exhaustion
 - Memoized data processing avoids redundant React renders
 - Code-split lazy loading reduces initial bundle size
@@ -268,25 +250,25 @@ conflict-globe.gl/
 
 ## Contributing
 
-Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+Contributions are welcome. Please read CONTRIBUTING.md first.
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
+2. Create a feature branch: git checkout -b feature/your-feature
 3. Commit your changes
-4. Open a pull request against `main`
+4. Open a pull request against main
 
 ---
 
 ## License
 
-Distributed under the [MIT License](LICENSE).
+Distributed under the MIT License.
 
 ---
 
 ## Acknowledgements
 
-- [globe.gl](https://github.com/vasturiano/globe.gl) — WebGL globe rendering by Vasco Asturiano
-- [three-globe](https://github.com/vasturiano/three-globe) — Three.js globe plugin
-- [GDELT Project](https://www.gdeltproject.org/) — Primary open-source event data provider
-- [Ollama](https://ollama.ai) — Local AI inference
-- [OpenRouter](https://openrouter.ai) — Cloud AI routing
+- globe.gl - WebGL globe rendering by Vasco Asturiano
+- three-globe - Three.js globe plugin
+- GDELT Project - Primary open-source event data provider
+- Ollama - Local AI inference
+- OpenRouter - Cloud AI routing
