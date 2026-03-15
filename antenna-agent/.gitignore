@@ -1,0 +1,11 @@
+api_key
+antenna.env
+config.json
+antenna.pid
+venv/
+logs/
+backups/
+pgp/
+*.log
+*.pid
+workspace/cron/jobs.json

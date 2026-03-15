@@ -1,0 +1,7 @@
+# Antenna Guardian Cron
+# Restarts antenna if not running, every 5 minutes
+
+*/5 * * * * /home/c0smic/opencode/ui/antenna/scripts/antenna-guardian.sh
+
+# Promotion script - twice daily (8am and 8pm)
+0 8,20 * * * /home/c0smic/opencode/ui/antenna/scripts/promote-antenna.sh

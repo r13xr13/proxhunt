@@ -1,0 +1,11 @@
+[Unit]
+Description=Antenna Signal Poster
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/c0smic/.antenna/scripts/signal-poster.py
+User=c0smic
+
+[Install]
+WantedBy=multi-user.target

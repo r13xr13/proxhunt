@@ -1,0 +1,117 @@
+package tools
+
+import (
+	"context"
+	"fmt"
+)
+
+type SpawnTool struct {
+	manager        *SubagentManager
+	originChannel  string
+	originChatID   string
+	allowlistCheck func(targetAgentID string) bool
+	callback       AsyncCallback // For async completion notification
+}
+
+func NewSpawnTool(manager *SubagentManager) *SpawnTool {
+	return &SpawnTool{
+		manager:       manager,
+		originChannel: "cli",
+		originChatID:  "direct",
+	}
+}
+
+// SetCallback implements AsyncTool interface for async completion notification
+func (t *SpawnTool) SetCallback(cb AsyncCallback) {
+	t.callback = cb
+}
+
+func (t *SpawnTool) Name() string {
+	return "spawn"
+}
+
+func (t *SpawnTool) Description() string {
+	return "Spawn a subagent to handle a task in the background. Use this for complex or time-consuming tasks that can run independently. The subagent will complete the task and report back when done."
+}
+
+func (t *SpawnTool) Parameters() map[string]interface{} {
+	return map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"task": map[string]interface{}{
+				"type":        "string",
+				"description": "The task for subagent to complete",
+			},
+			"label": map[string]interface{}{
+				"type":        "string",
+				"description": "Optional short label for the task (for display)",
+			},
+			"agent_id": map[string]interface{}{
+				"type":        "string",
+				"description": "Agent type: researcher (lightweight), coder (code), writer (general), analyst (complex)",
+			},
+			"type": map[string]interface{}{
+				"type":        "string",
+				"description": "Shorthand for agent type: research, code, write, analyze",
+			},
+		},
+		"required": []string{"task"},
+	}
+}
+
+func (t *SpawnTool) SetContext(channel, chatID string) {
+	t.originChannel = channel
+	t.originChatID = chatID
+}
+
+func (t *SpawnTool) SetAllowlistChecker(check func(targetAgentID string) bool) {
+	t.allowlistCheck = check
+}
+
+func (t *SpawnTool) Execute(ctx context.Context, args map[string]interface{}) *ToolResult {
+	task, ok := args["task"].(string)
+	if !ok {
+		return ErrorResult("task is required")
+	}
+
+	label, _ := args["label"].(string)
+	agentID, _ := args["agent_id"].(string)
+
+	// Support shorthand "type" parameter
+	if agentID == "" {
+		if t, ok := args["type"].(string); ok {
+			switch t {
+			case "research":
+				agentID = "researcher"
+			case "code":
+				agentID = "coder"
+			case "write":
+				agentID = "writer"
+			case "analyze":
+				agentID = "analyst"
+			default:
+				agentID = t
+			}
+		}
+	}
+
+	// Check allowlist if targeting a specific agent
+	if agentID != "" && t.allowlistCheck != nil {
+		if !t.allowlistCheck(agentID) {
+			return ErrorResult(fmt.Sprintf("not allowed to spawn agent '%s'", agentID))
+		}
+	}
+
+	if t.manager == nil {
+		return ErrorResult("Subagent manager not configured")
+	}
+
+	// Pass callback to manager for async completion notification
+	result, err := t.manager.Spawn(ctx, task, label, agentID, t.originChannel, t.originChatID, t.callback)
+	if err != nil {
+		return ErrorResult(fmt.Sprintf("failed to spawn subagent: %v", err))
+	}
+
+	// Return AsyncResult since the task runs in background
+	return AsyncResult(result)
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Antenna Guardian - Keeps Antenna Gateway Running
+After=network.target
+
+[Service]
+Type=simple
+User=c0smic
+WorkingDirectory=%h
+ExecStart=/home/c0smic/opencode/ui/antenna/scripts/antenna-guardian.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

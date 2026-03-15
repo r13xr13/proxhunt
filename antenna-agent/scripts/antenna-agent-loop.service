@@ -1,0 +1,17 @@
+[Unit]
+Description=Antenna Agent Loop - 24/7 autonomous agent operations
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=c0smic
+WorkingDirectory=/home/c0smic/opencode/ui/antenna
+ExecStart=/home/c0smic/opencode/ui/antenna/scripts/agent-loop.sh
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/c0smic/.antenna/logs/agent-loop.log
+StandardError=append:/home/c0smic/.antenna/logs/agent-loop.log
+
+[Install]
+WantedBy=multi-user.target

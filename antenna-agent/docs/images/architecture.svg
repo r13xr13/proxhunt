@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <rect fill="#0d1117" width="800" height="500"/>
+  <text x="400" y="30" fill="#58a6ff" font-family="monospace" font-size="20" text-anchor="middle">ANTENNA ARCHITECTURE</text>
+  
+  <!-- Core Layer -->
+  <rect x="150" y="60" width="500" height="80" fill="#1f6feb" rx="10"/>
+  <text x="400" y="85" fill="#fff" font-family="monospace" font-size="16" text-anchor="middle">CORE</text>
+  <text x="400" y="110" fill="#fff" font-family="monospace" font-size="12" text-anchor="middle">Agent Loop • Tool Executor • Memory System</text>
+  
+  <!-- Second Layer -->
+  <rect x="50" y="170" width="150" height="60" fill="#238636" rx="8"/>
+  <text x="125" y="195" fill="#fff" font-family="monospace" font-size="12" text-anchor="middle">P2P Network</text>
+  <text x="125" y="215" fill="#fff" font-family="monospace" font-size="10" text-anchor="middle">Peer Discovery</text>
+  
+  <rect x="220" y="170" width="150" height="60" fill="#f78166" rx="8"/>
+  <text x="295" y="195" fill="#fff" font-family="monospace" font-size="12" text-anchor="middle">Wallet (XMR)</text>
+  <text x="295" y="215" fill="#fff" font-family="monospace" font-size="10" text-anchor="middle">Transactions</text>
+  
+  <rect x="390" y="170" width="150" height="60" fill="#a371f7" rx="8"/>
+  <text x="465" y="195" fill="#fff" font-family="monospace" font-size="12" text-anchor="middle">Skills</text>
+  <text x="465" y="215" fill="#fff" font-family="monospace" font-size="10" text-anchor="middle">Installer</text>
+  
+  <rect x="560" y="170" width="150" height="60" fill="#f85149" rx="8"/>
+  <text x="635" y="195" fill="#fff" font-family="monospace" font-size="12" text-anchor="middle">Heartbeat</text>
+  <text x="635" y="215" fill="#fff" font-family="monospace" font-size="10" text-anchor="middle">Monitoring</text>
+  
+  <!-- Third Layer -->
+  <rect x="50" y="260" width="120" height="50" fill="#58a6ff" rx="6"/>
+  <text x="110" y="280" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">Channels</text>
+  <text x="110" y="298" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">Telegram, Discord...</text>
+  
+  <rect x="190" y="260" width="120" height="50" fill="#3fb950" rx="6"/>
+  <text x="250" y="280" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">Providers</text>
+  <text x="250" y="298" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">Ollama, Claude...</text>
+  
+  <rect x="330" y="260" width="120" height="50" fill="#f0883e" rx="6"/>
+  <text x="390" y="280" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">Bus</text>
+  <text x="390" y="298" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">Event System</text>
+  
+  <rect x="470" y="260" width="120" height="50" fill="#a371f7" rx="6"/>
+  <text x="530" y="280" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">Auth</text>
+  <text x="530" y="298" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">OAuth, PKCE</text>
+  
+  <rect x="610" y="260" width="120" height="50" fill="#8b949e" rx="6"/>
+  <text x="670" y="280" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">Config</text>
+  <text x="670" y="298" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">Management</text>
+  
+  <!-- Fourth Layer - Tools -->
+  <rect x="150" y="340" width="500" height="50" fill="#6e7681" rx="6"/>
+  <text x="400" y="365" fill="#fff" font-family="monospace" font-size="12" text-anchor="middle">TOOLS: File • Exec • Web Search • Fetch • Message • I2C • SPI</text>
+  
+  <!-- Providers -->
+  <rect x="150" y="410" width="500" height="50" fill="#1f6feb" rx="6"/>
+  <text x="400" y="435" fill="#fff" font-family="monospace" font-size="12" text-anchor="middle">LLM PROVIDERS: Ollama • OpenAI • Claude • Anthropic • DeepSeek • OpenRouter</text>
+  
+  <!-- Arrows -->
+  <path d="M400 140 L400 170" stroke="#58a6ff" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+</svg>

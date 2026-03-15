@@ -1,0 +1,218 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "~/.antenna/workspace",
+      "restrict_to_workspace": true,
+      "provider": "openrouter",
+      "model": "minimax/minimax-m2.5",
+      "max_tokens": 8192,
+      "max_tool_iterations": 10,
+      "memory_enabled": true
+    },
+    "models": {
+      "default": "openrouter/qwen/qwen3-next-80b-a3b-instruct",
+      "embedding": "openrouter/google/gemma-2-9b-it",
+      "code": "openrouter/qwen/qwen3-coder-plus",
+      "fast": "openrouter/qwen/qwen3-coder-flash",
+      "auto_switch": {
+        "enabled": true,
+        "rules": [
+          {"trigger": ["code", "debug", "programming", "function"], "use": "openrouter/qwen/qwen3-coder-plus"},
+          {"trigger": ["quick", "simple", "fast"], "use": "openrouter/qwen/qwen3-coder-flash"},
+          {"trigger": ["default"], "use": "openrouter/qwen/qwen3-next-80b-a3b-instruct"}
+        ]
+      }
+    },
+    "sub_agents": {
+      "MonitorAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-coder-flash",
+        "role": "system monitoring",
+        "triggers": ["heartbeat", "service_down"],
+        "actions": ["health_check", "restart_services", "send_alerts"]
+      },
+      "BackupAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-coder-flash",
+        "role": "database backup",
+        "triggers": ["scheduled:0300"],
+        "actions": ["backup_database", "cleanup_old_backups"]
+      },
+      "MarketingAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct",
+        "role": "marketing and announcements",
+        "triggers": ["new_registration", "new_skill", "new_service"],
+        "actions": ["post_telegram", "post_discord", "post_feed"]
+      },
+      "AlertAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-coder-flash",
+        "role": "alerts and notifications",
+        "triggers": ["error", "service_down", "disk_full"],
+        "actions": ["send_telegram_alert", "send_discord_alert"]
+      },
+      "PublicInteractionAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct",
+        "role": "public engagement",
+        "triggers": ["scheduled:hourly", "new_user", "trending"],
+        "actions": ["post_tips", "share_skills", "engage_discussions"]
+      },
+      "SkillCreatorAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-coder-plus",
+        "role": "skill creation",
+        "triggers": ["scheduled:daily", "market_demand"],
+        "actions": ["analyze_demand", "generate_skill", "publish_skill"]
+      },
+      "MarketplaceAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct",
+        "role": "marketplace management",
+        "triggers": ["scheduled:6h", "new_transaction"],
+        "actions": ["update_prices", "promote_featured", "process_orders"]
+      },
+      "ProductCreatorAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct",
+        "role": "product creation",
+        "triggers": ["scheduled:daily", "market_gap_detected"],
+        "actions": ["analyze_market", "create_product", "launch_product"]
+      },
+      "CasinoBotAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-coder-flash",
+        "role": "casino operations",
+        "triggers": ["scheduled:hourly", "balance_threshold"],
+        "actions": ["manage_games", "run_strategies", "track_stats"]
+      },
+      "TorAdAgent": {
+        "enabled": true,
+        "model": "openrouter/qwen/qwen3-next-80b-a3b-instruct",
+        "role": "tor advertising",
+        "triggers": ["scheduled:daily", "new_service", "campaign_end"],
+        "actions": ["create_campaign", "optimize_ads", "track_analytics"]
+      }
+    }
+  },
+  "session": {
+    "memory_file": "~/.antenna/workspace/memory.json",
+    "auto_clear": true,
+    "clear_on_overflow": true,
+    "keep_recent": 5
+  },
+  "proton": {
+    "email": "antennabot@proton.me",
+    "password": "YOUR_PROTON_PASSWORD",
+    "enabled_services": ["mail", "calendar", "drive"],
+    "note": "Browser automation via proton-web skill with Playwright"
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "token": "YOUR_TELEGRAM_BOT_TOKEN",
+      "allow_from": [],
+      "chat_id": "7774828058",
+      "max_response_chars": 4000
+    },
+    "discord": {
+      "enabled": true,
+      "token": "YOUR_DISCORD_BOT_TOKEN",
+      "allow_from": [],
+      "channel_id": "1474468976124887201",
+      "max_response_chars": 1900
+    },
+    "web": {
+      "enabled": true,
+      "api_url": "http://localhost:3000",
+      "gateway_url": "http://localhost:18790",
+      "public_url": "http://7kmmw5jrgk7lfgyvyutz47kj4bxhm6g3mgi7us2g25wby2w2ibqk4sad.onion"
+    }
+  },
+  "providers": {
+    "ollama": {
+      "api_key": "ollama-key",
+      "api_base": ""
+    },
+    "openai": {
+      "api_key": "",
+      "api_base": ""
+    },
+    "anthropic": {
+      "api_key": "",
+      "api_base": ""
+    },
+    "deepseek": {
+      "api_key": "",
+      "api_base": ""
+    },
+    "ollama": {
+      "gpu_layers": 33,
+      "num_threads": 8,
+      "flash_attention": true,
+      "max_loaded_models": 3,
+      "cpu_fallback": true
+    },
+    "openrouter": {
+      "api_key": "sk-or-v1-YOUR_OPENROUTER_KEY",
+      "api_base": ""
+    }
+  },
+  "gateway": {
+    "host": "0.0.0.0",
+    "port": 18790
+  },
+  "tools": {
+    "web": {
+      "duckduckgo": {
+        "enabled": true,
+        "max_results": 5
+      }
+    },
+    "exec": {
+      "enable_deny_patterns": true
+    }
+  },
+  "heartbeat": {
+    "enabled": true,
+    "interval": 30
+  },
+  "monitoring": {
+    "website": {
+      "url": "http://localhost:3000",
+      "check_interval": 300,
+      "alert_on_down": true
+    },
+    "gateway": {
+      "url": "http://localhost:18790",
+      "check_interval": 300,
+      "alert_on_down": true
+    },
+    "tor": {
+      "onion": "http://7kmmw5jrgk7lfgyvyutz47kj4bxhm6g3mgi7us2g25wby2w2ibqk4sad.onion",
+      "check_interval": 600,
+      "alert_on_down": true
+    },
+    "database": {
+      "host": "localhost:5432",
+      "name": "antenna",
+      "check_interval": 300
+    }
+  },
+  "automation": {
+    "backup": {
+      "enabled": true,
+      "schedule": "0 3 * * *",
+      "retention_days": 7
+    },
+    "health_check": {
+      "enabled": true,
+      "schedule": "*/5 * * * *"
+    },
+    "service_monitor": {
+      "enabled": true,
+      "schedule": "*/10 * * * *"
+    }
+  }
+}

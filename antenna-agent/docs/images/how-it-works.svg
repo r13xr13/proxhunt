@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <rect fill="#0d1117" width="800" height="500"/>
+  <text x="400" y="30" fill="#58a6ff" font-family="monospace" font-size="20" text-anchor="middle">HOW IT WORKS</text>
+  
+  <!-- USER -->
+  <rect x="320" y="55" width="160" height="40" fill="#f78166" rx="6"/>
+  <text x="400" y="80" fill="#fff" font-family="monospace" font-size="14" text-anchor="middle">USER</text>
+  
+  <!-- Arrow down -->
+  <line x1="400" y1="95" x2="400" y2="115" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- ANTENNA GATEWAY -->
+  <rect x="250" y="120" width="300" height="80" fill="#1f6feb" rx="10"/>
+  <text x="400" y="145" fill="#fff" font-family="monospace" font-size="14" text-anchor="middle">ANTENNA GATEWAY</text>
+  <text x="400" y="165" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">Channel Router • Agent Loop • Skill Executor</text>
+  
+  <!-- Arrow to LLM -->
+  <line x1="400" y1="200" x2="400" y2="220" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- LLM Provider -->
+  <rect x="300" y="225" width="200" height="45" fill="#238636" rx="8"/>
+  <text x="400" y="252" fill="#fff" font-family="monospace" font-size="13" text-anchor="middle">LLM (Ollama/Claude/etc)</text>
+  
+  <!-- Arrows from LLM back to gateway -->
+  <line x1="400" y1="270" x2="400" y2="290" stroke="#8b949e" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <!-- Bottom layer - Tools, Memory, Wallet -->
+  <rect x="50" y="300" width="150" height="50" fill="#a371f7" rx="6"/>
+  <text x="125" y="325" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">TOOLS</text>
+  <text x="125" y="340" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">File, Exec, Web...</text>
+  
+  <rect x="325" y="300" width="150" height="50" fill="#3fb950" rx="6"/>
+  <text x="400" y="325" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">MEMORY</text>
+  <text x="400" y="340" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">Sessions, History</text>
+  
+  <rect x="600" y="300" width="150" height="50" fill="#f78166" rx="6"/>
+  <text x="675" y="325" fill="#fff" font-family="monospace" font-size="11" text-anchor="middle">WALLET</text>
+  <text x="675" y="340" fill="#fff" font-family="monospace" font-size="9" text-anchor="middle">XMR, Lightning</text>
+  
+  <!-- Side arrows to bottom layer -->
+  <path d="M350 160 L125 300" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,4" fill="none"/>
+  <path d="M400 160 L400 300" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,4" fill="none"/>
+  <path d="M450 160 L675 300" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,4" fill="none"/>
+  
+  <!-- External Services Box -->
+  <rect x="200" y="380" width="400" height="60" fill="#161b22" rx="8" stroke="#30363d" stroke-width="1"/>
+  <text x="400" y="405" fill="#8b949e" font-family="monospace" font-size="12" text-anchor="middle">EXTERNAL SERVICES</text>
+  <text x="400" y="425" fill="#58a6ff" font-family="monospace" font-size="10" text-anchor="middle">Telegram • Discord • WhatsApp • GitHub • Home Assistant • Database</text>
+  
+  <!-- Flow indicators -->
+  <text x="50" y="380" fill="#f78166" font-family="monospace" font-size="9">Input ◄</text>
+  <text x="700" y="380" fill="#3fb950" font-family="monospace" font-size="9">Output ►</text>
+  
+  <!-- Definitions -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#8b949e"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,10 @@
+[Unit]
+Description=Antenna Promotion Timer
+
+[Timer]
+OnCalendar=*-*-* 08:00
+OnCalendar=*-*-* 20:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

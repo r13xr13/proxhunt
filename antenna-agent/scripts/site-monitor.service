@@ -1,0 +1,7 @@
+[Unit]
+Description=Site Monitor - Monitor antenna-ai.loca.lt health
+
+[Service]
+Type=oneshot
+ExecStart=/home/c0smic/opencode/ui/antenna/scripts/site-monitor.sh
+WorkingDirectory=/home/c0smic/opencode/ui/antenna

@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────
+  # Antenna Gateway (Main Agent)
+  # ─────────────────────────────────────────────
+  antenna-gateway:
+    build: .
+    container_name: antenna-gateway
+    restart: unless-stopped
+    ports:
+      - "18790:18790"
+      - "18792:18792"
+    volumes:
+      - ./config/config.json:/home/antenna/.antenna/config.json:ro
+      - antenna-workspace:/home/antenna/.antenna/workspace
+    environment:
+      - ANTENNA_CONFIG=/home/antenna/.antenna/config.json
+    command: ["gateway"]
+    networks:
+      - antenna-network
+
+  # ─────────────────────────────────────────────
+  # Antenna Web Interface
+  # ─────────────────────────────────────────────
+  antenna-web:
+    build:
+      context: ../antenna-web
+      dockerfile: Dockerfile
+    container_name: antenna-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://antenna-gateway:18790
+      - NEXT_PUBLIC_WS_URL=ws://antenna-gateway:18790
+    depends_on:
+      - antenna-gateway
+    networks:
+      - antenna-network
+
+  # ─────────────────────────────────────────────
+  # Social Bot - Twitter/X Bot
+  # ─────────────────────────────────────────────
+  bot-twitter:
+    build: .
+    container_name: bot-twitter
+    restart: unless-stopped
+    volumes:
+      - ./config/config.json:/home/antenna/.antenna/config.json:ro
+      - antenna-workspace:/home/antenna/.antenna/workspace
+    environment:
+      - BOT_MODE=true
+      - BOT_PLATFORM=twitter
+    command: ["agent", "-m", "Post about Antenna - the decentralized AI assistant. Keep it short and engaging."]
+    profiles:
+      - bots
+    networks:
+      - antenna-network
+
+  # ─────────────────────────────────────────────
+  # Social Bot - Reddit Bot
+  # ─────────────────────────────────────────────
+  bot-reddit:
+    build: .
+    container_name: bot-reddit
+    restart: unless-stopped
+    volumes:
+      - ./config/config.json:/home/antenna/.antenna/config.json:ro
+      - antenna-workspace:/home/antenna/.antenna/workspace
+    environment:
+      - BOT_MODE=true
+      - BOT_PLATFORM=reddit
+    command: ["agent", "-m", "Share Antenna in a helpful way to r/artificial and r/selfhosted"]
+    profiles:
+      - bots
+    networks:
+      - antenna-network
+
+  # ─────────────────────────────────────────────
+  # Chat Bot - Simulates Activity
+  # ─────────────────────────────────────────────
+  bot-chat:
+    build: .
+    container_name: bot-chat
+    restart: unless-stopped
+    volumes:
+      - ./config/config.json:/home/antenna/.antenna/config.json:ro
+      - antenna-workspace:/home/antenna/.antenna/workspace
+    environment:
+      - BOT_MODE=true
+      - BOT_PLATFORM=chat
+    command: ["agent", "-m", "Start a conversation about decentralized AI assistants"]
+    profiles:
+      - bots
+    networks:
+      - antenna-network
+
+  # ─────────────────────────────────────────────
+  # News Bot - Shares Updates
+  # ─────────────────────────────────────────────
+  bot-news:
+    build: .
+    container_name: bot-news
+    restart: unless-stopped
+    volumes:
+      - ./config/config.json:/home/antenna/.antenna/config.json:ro
+      - antenna-workspace:/home/antenna/.antenna/workspace
+    environment:
+      - BOT_MODE=true
+      - BOT_PLATFORM=news
+    command: ["agent", "-m", "Share the latest Antenna feature: P2P networking and XMR payments!"]
+    profiles:
+      - bots
+    networks:
+      - antenna-network
+
+volumes:
+  antenna-workspace:
+
+networks:
+  antenna-network:
+    driver: bridge
