@@ -1793,7 +1793,7 @@ export default function App() {
               ["NET", "Network", () => setShowEntityGraph(p => !p), showEntityGraph],
               ["TIME", "Time", () => setShowTimeMachine(p => !p), showTimeMachine],
               ["VOICE", "Voice", () => setVoiceEnabled(p => !p), voiceEnabled],
-              ["DISC", "Discord", () => window.open("https://discord.gg/ConflictGlobe", "_blank"), false],
+              ["DISC", "Discord", () => window.open("https://discord.gg/zRyBE6S7YG", "_blank"), false],
               ["MARK", "Markers", () => {}, showCollaborators],
               ["TEAM", "Team", () => setShowCollaborators(p => !p), showCollaborators],
               ["RPT", "Report", () => setShowReportPanel(p => !p), showReportPanel],
