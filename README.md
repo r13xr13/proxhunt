@@ -13,7 +13,7 @@ Real time OSINT visualization platform for global conflict event monitoring and 
 
 <br/>
 
-[![Conflict Globe](https://raw.githubusercontent.com/r13xr13/conflict-globe.gl/main/Screenshot_11-Mar_21-07-37_14287.png)
+[!Conflict Globe](https://raw.githubusercontent.com/r13xr13/conflict-globe.gl/main/Screenshot_11-Mar_21-07-37_14287.png)
 
 </div>
 
