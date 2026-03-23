@@ -19,8 +19,6 @@ Real time OSINT visualization platform for global conflict event monitoring and 
 
 ## Demo
 > **Demo**: [▶ Watch on YouTube](https://www.youtube.com/watch?v=EvRL27Z5uh4)
->
-> **Discord**: [Join the community](https://discord.gg/zRyBE6S7YG)
 
 ---
 
