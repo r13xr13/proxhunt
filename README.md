@@ -277,3 +277,9 @@ Distributed under the MIT License.
 - GDELT Project - Primary open-source event data provider
 - Ollama - Local AI inference
 - OpenRouter - Cloud AI routing
+
+<div align="center">
+
+**Conflict-Globe.gl** by [c0smic](https://github.com/r13xr13)
+
+</div>
