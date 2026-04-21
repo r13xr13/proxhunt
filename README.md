@@ -280,6 +280,6 @@ Distributed under the MIT License.
 
 <div align="center">
 
-**Conflict-Globe.gl** by [c0smic](https://github.com/r13xr13)
+**Conflict-Globe.gl** by [HEAVYBUTTER](https://github.com/r13xr13)
 
 </div>
