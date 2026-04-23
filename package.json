@@ -1,7 +1,7 @@
 {
   "name": "proxhunt",
   "version": "1.0.0",
-  "description": "Gameified RFID wardriving platform - WiGLE for RFID tags",
+  "description": "Gameified RFID wardriving platform for RFID tag discovery",
   "main": "server/dist/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",

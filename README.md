@@ -1,6 +1,6 @@
 # ProxHunt
 
-Gameified RFID wardriving platform - WiGLE for RFID tags.
+Gameified RFID wardriving platform for RFID tag discovery
 
 ![ProxHunt](https://raw.githubusercontent.com/r13xr13/proxhunt/main/screenshot.png)
 
