@@ -1,7 +1,0 @@
-[Unit]
-Description=Antenna Promotion Script
-
-[Service]
-Type=oneshot
-ExecStart=/home/c0smic/opencode/ui/antenna/scripts/promote-antenna.sh
-WorkingDirectory=/home/c0smic/opencode/ui/antenna/scripts

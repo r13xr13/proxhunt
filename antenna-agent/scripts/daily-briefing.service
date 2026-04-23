@@ -1,7 +1,0 @@
-[Unit]
-Description=Antenna Daily Briefing
-
-[Service]
-Type=oneshot
-ExecStart=/home/c0smic/opencode/ui/antenna/scripts/daily-briefing.sh
-WorkingDirectory=/home/c0smic/opencode/ui/antenna/scripts
