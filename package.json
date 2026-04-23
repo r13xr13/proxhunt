@@ -1,40 +1,17 @@
 {
   "name": "proxhunt",
   "version": "1.0.0",
-  "description": "Gameified RFID wardriving platform for RFID tag discovery",
-  "main": "server/dist/index.js",
+  "description": "Gameified RFID wardriving platform",
+  "private": true,
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
-    "client": "cd client-3d && npm run dev",
+    "client": "cd client && npm run dev",
     "build": "npm run build:server && npm run build:client",
     "build:server": "cd server && npm run build",
-    "build:client": "cd client-3d && npm run build",
-    "start": "node server/dist/index.js",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "build:client": "cd client && npm run build"
   },
-  "keywords": [
-    "rfid",
-    "wardriving",
-    "globe",
-    "visualization",
-    "discord",
-    "gamification",
-    "esp32",
-    "iot"
-  ],
+  "keywords": ["rfid", "wardriving", "globe", "gamification"],
   "author": "ProxHunt Team",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/<your-org>/ProxHunt"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "dependencies": {
-    "chokidar": "^5.0.0",
-    "concurrently": "^8.2.0"
-  }
+  "license": "MIT"
 }
