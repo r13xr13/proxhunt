@@ -1,7 +1,7 @@
 {
-  "name": "@c0smic/conflict-globe",
+  "name": "proxhunt",
   "version": "1.0.0",
-  "description": "Real-time 3D OSINT visualization platform with AI-powered Discord bot",
+  "description": "Gameified RFID wardriving platform - WiGLE for RFID tags",
   "main": "server/dist/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
@@ -15,21 +15,20 @@
     "docker:down": "docker compose down"
   },
   "keywords": [
-    "osint",
-    "conflict",
+    "rfid",
+    "wardriving",
     "globe",
     "visualization",
     "discord",
-    "bot",
-    "ai",
-    "ollama",
-    "geopolitics"
+    "gamification",
+    "esp32",
+    "iot"
   ],
-  "author": "Conflict Globe Team",
+  "author": "ProxHunt Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/r13xr13/conflict-globe.gl"
+    "url": "https://github.com/<your-org>/ProxHunt"
   },
   "engines": {
     "node": ">=18.0.0"

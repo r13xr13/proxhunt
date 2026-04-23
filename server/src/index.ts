@@ -2,10 +2,9 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import path from "path";
-import conflictsRouter from "./routes/conflicts";
-import intelligenceRouter from "./routes/intelligence";
-import { startAISStream, stopAISStream, getAISStreamStatus } from "./services/maritime";
 import cors from "cors";
+import rfidRouter from "./routes/rfid";
+import { getDiscoveries, getReaders, getUniqueTagCount, getLeaderboard } from "./services/rfid";
 
 const app = express();
 const httpServer = createServer(app);
@@ -41,74 +40,15 @@ const cache: Map<string, { data: any; timestamp: number }> = new Map();
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "healthy",
+    service: "ProxHunt",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage(),
-    cacheSize: cache.size,
-    activeConnections: activeConnections.size,
-    env: NODE_ENV
+    activeConnections: activeConnections.size
   });
 });
 
-app.get("/api/cache/clear", (_req, res) => {
-  cache.clear();
-  res.json({ status: "cleared" });
-});
-
-// Webhook configuration endpoint
-let n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || "";
-
-app.post("/api/webhook/config", (req, res) => {
-  const { url, apiKey } = req.body;
-  if (url) {
-    n8nWebhookUrl = url;
-    console.log(`[Webhook] Configured: ${url}`);
-    res.json({ status: "configured", url });
-  } else {
-    res.json({ status: "current", url: n8nWebhookUrl });
-  }
-});
-
-// Webhook test endpoint
-app.post("/api/webhook/test", async (req, res) => {
-  if (!n8nWebhookUrl) {
-    return res.status(400).json({ error: "No webhook configured" });
-  }
-  try {
-    const axios = (await import("axios")).default;
-    await axios.post(n8nWebhookUrl, {
-      message: "Test from Conflict Globe",
-      type: "Test Alert",
-      severity: "low",
-      lat: 0,
-      lon: 0
-    });
-    res.json({ status: "sent" });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Function to send events to webhook
-async function sendToWebhook(events: any[]) {
-  if (!n8nWebhookUrl || events.length === 0) return;
-  
-  const criticalEvents = events.filter(e => e.severity === "critical" || e.severity === "high");
-  if (criticalEvents.length === 0) return;
-  
-  try {
-    const axios = (await import("axios")).default;
-    for (const event of criticalEvents.slice(0, 5)) {
-      await axios.post(n8nWebhookUrl, event);
-    }
-    console.log(`[Webhook] Sent ${criticalEvents.length} critical events to webhook`);
-  } catch (err: any) {
-    console.error("[Webhook] Error:", err.message);
-  }
-}
-
-app.use("/api/conflicts", conflictsRouter);
-app.use("/api/intelligence", intelligenceRouter);
+app.use("/api/rfid", rfidRouter);
 
 const clientBuildPath = path.join(__dirname, NODE_ENV === "production" ? "../../client-build" : "../../client-3d/dist");
 
@@ -132,12 +72,15 @@ let broadcastInterval: NodeJS.Timeout | null = null;
 
 async function fetchAndBroadcast() {
   try {
-    const response = await fetch(`http://127.0.0.1:${PORT}/api/conflicts`, { signal: AbortSignal.timeout(8000) });
-    const data = await response.json();
-    io.emit('conflicts:update', data);
-    console.log(`[Broadcast] Sent ${data.events?.length || 0} events to ${activeConnections.size} clients`);
+    const discoveries = getDiscoveries({ limit: 500 });
+    const readers = getReaders();
+    const stats = { uniqueTags: getUniqueTagCount(), totalReaders: readers.length };
+    const leaderboard = getLeaderboard(5);
+    
+    io.emit('rfid:update', { discoveries, readers, stats, leaderboard });
+    console.log(`[Broadcast] Sent ${discoveries.length} discoveries to ${activeConnections.size} clients`);
   } catch (error) {
-    console.error('Error fetching conflicts:', error);
+    console.error('Error broadcasting RFID data:', error);
   }
 }
 
@@ -145,8 +88,8 @@ io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id} (Total: ${activeConnections.size + 1})`);
   activeConnections.add(socket.id);
 
-  socket.emit('conflicts:welcome', {
-    message: 'Connected to Conflict Globe',
+  socket.emit('rfid:welcome', {
+    message: 'Connected to ProxHunt',
     timestamp: new Date().toISOString(),
     clientId: socket.id
   });
@@ -157,64 +100,13 @@ io.on('connection', (socket) => {
     fetchAndBroadcast();
   }
 
-  socket.on('conflicts:subscribe', () => {
-    socket.emit('conflicts:data', { events: [], message: 'Subscribed' });
+  socket.on('rfid:subscribe', () => {
+    socket.emit('rfid:data', { discoveries: [], message: 'Subscribed' });
   });
 
-  socket.on('conflicts:refresh', async () => {
+  socket.on('rfid:refresh', async () => {
     console.log(`Manual refresh requested by ${socket.id}`);
     await fetchAndBroadcast();
-  });
-
-  // ── Collaboration ──────────────────────────────────────────────────────────
-
-  // Track which room each socket is in
-  const socketRooms = new Map<string, string>(); // socketId → roomName
-  const roomUsers = new Map<string, Map<string, { username: string; color: string }>>(); // room → users
-
-  socket.on('collab:join', ({ room, username }: { room: string; username: string }) => {
-    // Leave any existing room first
-    const prevRoom = socketRooms.get(socket.id);
-    if (prevRoom) {
-      socket.leave(prevRoom);
-      const users = roomUsers.get(prevRoom);
-      if (users) users.delete(socket.id);
-      io.to(prevRoom).emit('collab:update', {
-        collaborators: Array.from(users?.entries() || []).map(([id, u]) => ({ id, ...u }))
-      });
-    }
-
-    // Join new room
-    socket.join(room);
-    socketRooms.set(socket.id, room);
-    if (!roomUsers.has(room)) roomUsers.set(room, new Map());
-    
-    const COLORS = ["#3b82f6","#22c55e","#f97316","#a855f7","#ec4899","#14b8a6","#eab308","#ef4444"];
-    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-    roomUsers.get(room)!.set(socket.id, { username, color });
-
-    // Broadcast updated user list to room
-    const users = roomUsers.get(room)!;
-    io.to(room).emit('collab:update', {
-      collaborators: Array.from(users.entries()).map(([id, u]) => ({ id, ...u }))
-    });
-
-    console.log(`[Collab] ${username} joined room "${room}" (${users.size} users)`);
-  });
-
-  socket.on('collab:leave', () => {
-    const room = socketRooms.get(socket.id);
-    if (!room) return;
-    socket.leave(room);
-    socketRooms.delete(socket.id);
-    const users = roomUsers.get(room);
-    if (users) {
-      users.delete(socket.id);
-      io.to(room).emit('collab:update', {
-        collaborators: Array.from(users.entries()).map(([id, u]) => ({ id, ...u }))
-      });
-      if (users.size === 0) roomUsers.delete(room);
-    }
   });
 
   socket.on('collab:cursor', ({ room, lat, lng }: { room: string; lat: number; lng: number }) => {

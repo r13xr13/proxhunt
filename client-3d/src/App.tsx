@@ -83,12 +83,14 @@ const CATEGORY_ICONS: Record<string, string> = {
   conflict: "C", maritime: "M", air: "A", cyber: "X",
   land: "L", space: "S", radio: "R", weather: "W",
   earthquakes: "Q", social: "S", cameras: "O", fire: "F",
+  rfid: "R",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
   conflict: "#ef4444", maritime: "#3b82f6", air: "#22c55e", cyber: "#a855f7",
   land: "#f97316", space: "#14b8a6", radio: "#eab308", weather: "#60a5fa",
   earthquakes: "#9333ea", social: "#ec4899", cameras: "#06b6d4", fire: "#ff4500",
+  rfid: "#06b6d4",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -208,7 +210,7 @@ export default function App() {
   const [filters, setFilters] = useState<Record<string, boolean>>({
     conflict: true, maritime: true, air: true, cyber: true,
     land: true, space: true, radio: true, weather: true,
-    earthquakes: true, social: true, cameras: true,
+    earthquakes: true, social: true, cameras: true, rfid: true,
   });
   const [severityFilters, setSeverityFilters] = useState<Record<string, boolean>>({
     low: true, medium: true, high: true, critical: true,
@@ -518,7 +520,7 @@ export default function App() {
       
       if (matchingEvents.length > 0) {
         results.push({
-          source: "Conflict Globe Database",
+          source: "ProxHunt Database",
           description: `Found ${matchingEvents.length} matching events in local OSINT data`,
           severity: "low",
           data: matchingEvents.map(e => ({ type: e.type, location: `${e.lat?.toFixed(2)}, ${e.lon?.toFixed(2)}`, source: e.source }))
@@ -937,6 +939,23 @@ export default function App() {
   // ── WebSocket ──
   useEffect(() => {
     const socket = io(window.location.origin, { transports: ["websocket", "polling"], reconnectionAttempts: 3 });
+    
+    socket.on("rfid:update", (data: { discoveries: any[] }) => {
+      const rfidEvents: ConflictEvent[] = (data.discoveries || []).map((d, i) => ({
+        id: d.id || `rfid-${i}`,
+        lat: d.latitude,
+        lon: d.longitude,
+        date: d.timestamp,
+        type: "rfid",
+        description: `Tag: ${d.tag_id} | Reader: ${d.reader_id}`,
+        source: d.reader_id,
+        category: "rfid",
+        severity: d.signal_strength ? (d.signal_strength > -50 ? "high" : "medium") : "low",
+      }));
+      setEvents(prev => [...prev, ...rfidEvents].slice(-2000));
+      setLoading(false);
+    });
+    
     socket.on("conflicts:update", (data: { events: ConflictEvent[] }) => {
       setEvents(data.events || []); setLoading(false);
     });
@@ -1115,7 +1134,7 @@ export default function App() {
         return true;
       });
       if (matches.length > 0 && Notification.permission === "granted") {
-        new Notification(`Conflict Globe: ${alert.name}`, { body: `${matches.length} events match` });
+        new Notification(`ProxHunt: ${alert.name}`, { body: `${matches.length} events match` });
       }
     });
   }, [alerts]);
@@ -1137,7 +1156,7 @@ export default function App() {
   };
 
   const exportKML = () => {
-    const kml = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Conflict Globe</name>${validEvents.map(e => `<Placemark><name>${e.type}</name><description><![CDATA[${e.description || ""}]]></description><Point><coordinates>${e.lon},${e.lat},0</coordinates></Point></Placemark>`).join("")}</Document></kml>`;
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>ProxHunt</name>${validEvents.map(e => `<Placemark><name>${e.type}</name><description><![CDATA[${e.description || ""}]]></description><Point><coordinates>${e.lon},${e.lat},0</coordinates></Point></Placemark>`).join("")}</Document></kml>`;
     saveAs(new Blob([kml], { type: "application/vnd.google-earth.kml+xml" }), "conflict-globe.kml");
   };
 
@@ -1261,11 +1280,11 @@ export default function App() {
     const date = new Date().toISOString().split("T")[0];
     let content = "";
     if (reportType === "summary") {
-      content = `# Conflict Globe — Summary Report\nGenerated: ${date}\nTotal Events: ${validEvents.length}\n\n## By Category\n${Object.entries(analytics.byCategory).map(([c, n]) => `- ${c}: ${n}`).join("\n")}\n\n## By Severity\n${Object.entries(analytics.bySeverity).map(([s, n]) => `- ${s}: ${n}`).join("\n")}`;
+      content = `# ProxHunt — Summary Report\nGenerated: ${date}\nTotal Events: ${validEvents.length}\n\n## By Category\n${Object.entries(analytics.byCategory).map(([c, n]) => `- ${c}: ${n}`).join("\n")}\n\n## By Severity\n${Object.entries(analytics.bySeverity).map(([s, n]) => `- ${s}: ${n}`).join("\n")}`;
     } else if (reportType === "detailed") {
-      content = `# Conflict Globe — Detailed Report\nGenerated: ${date}\n\n${validEvents.map(e => `## ${e.type}\n- Category: ${e.category}\n- Severity: ${e.severity || "N/A"}\n- Date: ${e.date}\n- Location: ${e.lat}, ${e.lon}\n- Description: ${e.description}\n- Source: ${e.source}\n`).join("\n")}`;
+      content = `# ProxHunt — Detailed Report\nGenerated: ${date}\n\n${validEvents.map(e => `## ${e.type}\n- Category: ${e.category}\n- Severity: ${e.severity || "N/A"}\n- Date: ${e.date}\n- Location: ${e.lat}, ${e.lon}\n- Description: ${e.description}\n- Source: ${e.source}\n`).join("\n")}`;
     } else {
-      content = `# Conflict Globe — Analytics Report\nGenerated: ${date}\n\nTotal Events: ${validEvents.length}\nAverage Per Day: ${analytics.avgPerDay}\n\n## Distribution\n${Object.entries(analytics.byCategory).map(([c, n]) => `${c}: ${n} (${((n / validEvents.length) * 100).toFixed(1)}%)`).join("\n")}`;
+      content = `# ProxHunt — Analytics Report\nGenerated: ${date}\n\nTotal Events: ${validEvents.length}\nAverage Per Day: ${analytics.avgPerDay}\n\n## Distribution\n${Object.entries(analytics.byCategory).map(([c, n]) => `${c}: ${n} (${((n / validEvents.length) * 100).toFixed(1)}%)`).join("\n")}`;
     }
     saveAs(new Blob([content], { type: "text/markdown" }), `conflict-report-${reportType}-${date}.md`);
   };

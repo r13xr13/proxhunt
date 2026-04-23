@@ -1,137 +1,30 @@
 services:
-  # Conflict Globe Web Application (Always On)
-  web:
+  server:
     build: .
-    container_name: conflict-globe-web
+    container_name: proxhunt-server
     ports:
       - "8080:8080"
     env_file:
       - .env
-    environment:
-      - REACT_APP_CESIUM_ION_TOKEN=${CESIUM_ION_TOKEN:-}
-      - ANTENNA_GATEWAY_URL=${ANTENNA_GATEWAY_URL:-http://host.docker.internal:18790}
-      - SIGIL7_CONTAINER=${SIGIL7_CONTAINER:-sigil7}
-      - SIGIL7_IP=${SIGIL7_IP:-host.docker.internal}
-      - PORTAINER_URL=${PORTAINER_URL:-http://host.docker.internal:9000}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./proxhunt.db:/app/server/proxhunt.db
     restart: unless-stopped
-    networks:
-      - conflict-globe
 
-  # Discord Bot - On-Demand (starts when needed)
   discord-bot:
     build:
       context: ./discord-bot
       dockerfile: Dockerfile
-    container_name: conflict-globe-discord
+    container_name: proxhunt-discord-bot
     ports:
       - "3001:3001"
     env_file:
       - discord-bot/.env
     environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - CONFLICT_GLOBE_API=${CONFLICT_GLOBE_API:-http://host.docker.internal:8080/api/conflicts}
-    volumes:
-      - discord-data:/app
+      - PROXHUNT_API=http://server:8080
     restart: on-failure:3
-    networks:
-      - conflict-globe
     profiles:
-      - discord
-
-  # Ollama - Local AI Models (Spins up on demand)
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    environment:
-      - OLLAMA_MODELS=/root/.ollama/models
-    restart: on-failure:3
-    networks:
-      - conflict-globe
-    profiles:
-      - ai
-
-  # Sigil7 - Pentest Tools (Spins up on demand)
-  sigil7:
-    image: sigil7:latest
-    container_name: sigil7
-    ports:
-      - "11435:11434"
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    volumes:
-      - sigil7-data:/root
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      conflict-globe:
-        ipv4_address: 172.18.0.10
-    restart: on-failure:3
-    privileged: true
-    profiles:
-      - pentest
-
-  # Portainer - Container Management (Always On - Admin)
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    ports:
-      - "9000:9000"
-      - "9443:9443"
-    volumes:
-      - portainer-data:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - PORTAINER_ADMIN_PASSWORD=${PORTAINER_ADMIN_PASSWORD:-admin123}
-    restart: unless-stopped
-    networks:
-      - conflict-globe
-
-  # MemOS - Notes (Always On)
-  memos:
-    image: neosmemo/memos:stable
-    container_name: memos
-    ports:
-      - "5230:5230"
-    volumes:
-      - memos-data:/var/opt/memos
-    restart: unless-stopped
-    networks:
-      - conflict-globe
-
-  # SearXNG - Search Engine (Always On)
-  searxng:
-    image: searxng/searxng:latest
-    container_name: searxng
-    ports:
-      - "8888:8080"
-    environment:
-      - SEARXNG_BASE_URL=http://searxng:8080
-    volumes:
-      - searxng-data:/etc/searxng
-    restart: unless-stopped
-    networks:
-      - conflict-globe
+      - bot
 
 networks:
-  conflict-globe:
+  default:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.18.0.0/16
-
-volumes:
-  discord-data:
-  antenna-data:
-  ollama-data:
-  sigil7-data:
-  portainer-data:
-  memos-data:
-  searxng-data:

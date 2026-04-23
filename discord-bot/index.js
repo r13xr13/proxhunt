@@ -1,570 +1,109 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder, Events } = require('discord.js');
-const Parser = require('rss-parser');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
-const cron = require('node-cron');
-const express = require('express');
-const crypto = require('crypto');
-const ConflictGlobeAI = require('./ai-agent');
-const parser = new Parser();
-
-const app = express();
-app.use(express.json());
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages
-    ]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 });
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
-const CONFLICT_GLOBE_API = process.env.CONFLICT_GLOBE_API || 'http://localhost:8080/api/conflicts';
-const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
-const GITHUB_REPO = process.env.GITHUB_REPO || 'r13xr13/conflict-globe.gl';
-const DEPLOY_CHANNEL_ID = process.env.DEPLOY_CHANNEL_ID || process.env.DEV_CHANNEL_ID;
+const API_URL = process.env.PROXHUNT_API || 'http://localhost:8080';
+const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 
-// Channel configurations (from environment variables only - no defaults)
-const CHANNELS = {
-    liveUpdates: process.env.LIVE_UPDATES_CHANNEL_ID,
-    threatAlerts: process.env.THREAT_ALERTS_CHANNEL_ID,
-    general: process.env.GENERAL_CHANNEL_ID,
-    dev: process.env.DEV_CHANNEL_ID,
-    deploy: DEPLOY_CHANNEL_ID
-};
-
-// Check if token and channels are set before starting bot
 if (!TOKEN || TOKEN === 'YOUR_DISCORD_BOT_TOKEN_HERE') {
-    console.log('⚠️ DISCORD_BOT_TOKEN not set. Discord bot will not start.');
-    console.log('Please set your bot token in .env file');
+  console.log('ProxHunt: DISCORD_BOT_TOKEN not set. Bot will not start.');
+  process.exit(1);
 }
 
-if (!CHANNELS.liveUpdates || !CHANNELS.threatAlerts || !CHANNELS.general) {
-    console.log('⚠️ Channel IDs not fully configured. Alerts may not send properly.');
+const EMBED_COLOR = 0x06b6d4;
+
+const LEVEL_ORDER = ['Novice', 'Scout', 'Hunter', 'Tracker', 'Ranger', 'Legend'];
+
+function getRankEmoji(level: string): string {
+  const rank = LEVEL_ORDER.indexOf(level);
+  return rank === -1 ? '🌱' : ['🌱', '🔭', '📡', '🗺️', '🚀', '👑'][rank];
 }
 
-// Initialize AI agent
-const aiAgent = new ConflictGlobeAI();
+async function sendLeaderboard(msg: any) {
+  try {
+    const response = await axios.get(`${API_URL}/api/rfid/leaderboard?limit=10`);
+    const players = response.data;
 
-// GitHub Webhook endpoint
-app.post('/webhook/github', (req, res) => {
-    const signature = req.headers['x-hub-signature-256'];
-    
-    if (GITHUB_WEBHOOK_SECRET && signature) {
-        const hmac = crypto.createHmac('sha256', GITHUB_WEBHOOK_SECRET);
-        const digest = 'sha256=' + hmac.update(JSON.stringify(req.body)).digest('hex');
-        if (signature !== digest) {
-            console.log('[GitHub] Invalid signature');
-            return res.status(401).send('Invalid signature');
-        }
+    if (!players.length) {
+      return msg.reply('No players yet. Start discovering RFID tags!');
     }
 
-    const event = req.headers['x-github-event'];
-    const payload = req.body;
+    const embed = new EmbedBuilder()
+      .setTitle('🏆 ProxHunt Leaderboard')
+      .setColor(EMBED_COLOR)
+      .setDescription('Top RFID collectors')
+      .setTimestamp();
 
-    console.log(`[GitHub] Received event: ${event}`);
+    const fields = players.map((p: any, i: number) => ({
+      name: `#${i + 1} ${getRankEmoji(p.level)} ${p.username}`,
+      value: `**${p.total_points}** pts | ${p.level} | ${p.discovery_count} finds`,
+      inline: true
+    }));
 
-    if (event === 'push') {
-        handlePushEvent(payload);
-    }
+    embed.addFields(fields);
+    msg.reply({ embeds: [embed] });
+  } catch (e) {
+    msg.reply('Could not fetch leaderboard. Is the API running?');
+  }
+}
 
-    res.status(200).send('OK');
+async function sendStats(msg: any) {
+  try {
+    const response = await axios.get(`${API_URL}/api/rfid/stats`);
+    const stats = response.data;
+
+    const embed = new EmbedBuilder()
+      .setTitle('📊 ProxHunt Stats')
+      .setColor(EMBED_COLOR)
+      .addFields(
+        { name: 'Unique Tags Discovered', value: `${stats.uniqueTags}`, inline: true },
+        { name: 'Status', value: '🟢 Online', inline: true }
+      );
+
+    msg.reply({ embeds: [embed] });
+  } catch (e) {
+    msg.reply('Could not fetch stats. Is the API running?');
+  }
+}
+
+client.once('ready', () => {
+  console.log(`🤖 ProxHunt Bot logged in as ${client.user?.tag}`);
+  client.user?.setActivity('RFID wardriving', { type: 3 });
 });
 
-async function handlePushEvent(payload) {
-    try {
-        const { commits, repository, pusher, ref } = payload;
-        const branch = ref.replace('refs/heads/', '');
-        
-        if (!commits || commits.length === 0) {
-            console.log('[GitHub] No commits in push event');
-            return;
-        }
+client.on('messageCreate', async (msg) => {
+  if (msg.author.bot || !msg.content.startsWith('!')) return;
 
-        const commitCount = commits.length;
-        const latestCommit = commits[0];
-        const author = latestCommit.author.name;
-        const message = latestCommit.message.substring(0, 200);
-        const url = latestCommit.url;
+  const [cmd, ...args] = msg.content.slice(1).split(' ');
+  const arg = args.join(' ');
 
-        const deployChannel = await client.channels.fetch(CHANNELS.deploy);
-        
-        if (deployChannel) {
-            const embed = new EmbedBuilder()
-                .setTitle('New Code Deployed')
-                .setDescription(`*${repository.full_name}* has been updated`)
-                .setColor(0x00FF00)
-                .addFields(
-                    { name: 'Branch', value: `\`${branch}\``, inline: true },
-                    { name: 'Commits', value: `${commitCount} new commit(s)`, inline: true },
-                    { name: 'Author', value: author, inline: true },
-                    { name: 'Latest Commit', value: `[${latestCommit.id.substring(0, 7)}](${url})` },
-                    { name: 'Message', value: message }
-                )
-                .setTimestamp();
+  switch (cmd.toLowerCase()) {
+    case 'leaderboard':
+    case 'lb':
+      sendLeaderboard(msg);
+      break;
 
-            await deployChannel.send({ 
-                content: '@here New code pushed to production!',
-                embeds: [embed] 
-            });
-            
-            console.log(`[Deploy] Notified Discord about ${commitCount} commits`);
-        }
-    } catch (error) {
-        console.error('[Deploy] Error handling push event:', error.message);
-    }
-}
+    case 'stats':
+      sendStats(msg);
+      break;
 
-// Start webhook server
-const WEBHOOK_PORT = process.env.WEBHOOK_PORT || 3001;
-app.listen(WEBHOOK_PORT, () => {
-    console.log(`[Webhook] Server listening on port ${WEBHOOK_PORT}`);
-    console.log(`[Webhook] GitHub endpoint: http://localhost:${WEBHOOK_PORT}/webhook/github`);
-});
+    case 'help':
+      msg.reply(`**ProxHunt Commands:**
+- \`!leaderboard\` / \`!lb\` - Show top collectors
+- \`!stats\` - View discovery stats
+- \`!help\` - Show this help`);
+      break;
 
-// AI Analysis function - runs every 30 minutes
-async function runAIAnalysis() {
-    try {
-        const report = await aiAgent.generateReport();
-        
-        // Send to #updates channel
-        const threatChannel = await client.channels.fetch(CHANNELS.threatAlerts);
-        if (threatChannel && report.summary.critical.length > 0) {
-            const alertEmbed = new EmbedBuilder()
-                .setTitle('AI Threat Analysis Report')
-                .setDescription('New threat analysis available')
-                .setColor(0xFF0000)
-                .addFields(
-                    { name: 'Critical Threats', value: String(report.summary.critical.length), inline: true },
-                    { name: 'High Threats', value: String(report.summary.high.length), inline: true },
-                    { name: 'Total Analyzed', value: String(report.summary.total), inline: true }
-                )
-                .setTimestamp();
-            
-            await threatChannel.send({ embeds: [alertEmbed] });
-        }
-        
-        // Send detailed report to #dev
-        const devChannel = await client.channels.fetch(CHANNELS.dev);
-        if (devChannel) {
-            const summary = report.summary;
-            
-            const devEmbed = new EmbedBuilder()
-                .setTitle('AI Comprehensive Analysis Report')
-                .setDescription('Full AI analysis of all Conflict Globe data sources')
-                .setColor(0x0099FF)
-                .addFields(
-                    { name: 'Total Events Analyzed', value: String(summary.total), inline: true },
-                    { name: 'Critical', value: String(summary.critical.length), inline: true },
-                    { name: 'High', value: String(summary.high.length), inline: true }
-                )
-                .setTimestamp();
-            
-            // Add category breakdown
-            const categories = Object.entries(summary.byCategory).map(([k, v]) => k + ': ' + v).join('\n');
-            if (categories) {
-                devEmbed.addFields({ name: 'By Category', value: categories, inline: false });
-            }
-            
-            // Add recommendations
-            if (report.recommendations && report.recommendations.length > 0) {
-                devEmbed.addFields({ name: 'Recommendations', value: report.recommendations.join('\n'), inline: false });
-            }
-            
-            await devChannel.send({ embeds: [devEmbed] });
-        }
-        
-        console.log('AI analysis completed');
-    } catch (error) {
-        console.error('Error running AI analysis:', error.message);
-    }
-}
-
-client.once('ready', async () => {
-    console.log('Logged in as ' + client.user.tag + '!');
-    console.log('Scheduler started...');
-
-    // Initialize AI agent
-    await aiAgent.init();
-
-    // Live updates: Every 15 minutes
-    cron.schedule('*/15 * * * *', async () => {
-        console.log('[CRON] Running live updates...');
-        await sendLiveUpdates();
-    });
-
-    // Hourly update: News + stats (hourly)
-    cron.schedule('0 * * * *', async () => {
-        console.log('[CRON] Running hourly update...');
-        await sendScheduledUpdate();
-    });
-
-    // AI analysis: Every 30 minutes
-    cron.schedule('*/30 * * * *', async () => {
-        console.log('[CRON] Running AI analysis...');
-        await runAIAnalysis();
-    });
-});
-
-async function fetchNews() {
-    try {
-        const [bbcFeed, bleepingComputerFeed] = await Promise.all([
-            parser.parseURL('https://feeds.bbci.co.uk/news/world/rss.xml'),
-            parser.parseURL('https://www.bleepingcomputer.com/feed/')
-        ]);
-
-        const allItems = [
-            ...bbcFeed.items.map(item => ({ ...item, source: 'BBC World News' })),
-            ...bleepingComputerFeed.items.map(item => ({ ...item, source: 'BleepingComputer' }))
-        ];
-
-        allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-
-        return allItems.slice(0, 5);
-    } catch (error) {
-        console.error('Error fetching news:', error.message);
-        return null;
-    }
-}
-
-async function fetchConflictData() {
-    try {
-        const response = await axios.get(CONFLICT_GLOBE_API, { timeout: 30000 });
-        const data = response.data;
-        if (!data.events || data.events.length === 0) return null;
-        return data.events;
-    } catch (error) {
-        console.error('Error fetching conflict data:', error.message);
-        return null;
-    }
-}
-
-// AI rewrite news for #general channel - write as original article
-async function rewriteNewsWithAI(newsItems) {
-    try {
-        const top3 = newsItems.slice(0, 3);
-        const rewritten = [];
-        
-        for (const item of top3) {
-            const content = item.contentSnippet || item.content || item.description || '';
-            const prompt = `Write a short news article (2-3 paragraphs) based on this headline and summary. Write in your own original words as a journalist would report it. Include context and what it means.
-
-Headline: "${item.title}"
-Summary: "${content.substring(0, 500)}"
-
-Write the article now:`;
-
-            const response = await axios.post(OLLAMA_BASE + '/chat', {
-                model: 'llama3.2:latest',
-                messages: [
-                    { role: 'system', content: 'You are a professional news reporter. Write original articles in your own words based on headlines and summaries.' },
-                    { role: 'user', content: prompt }
-                ],
-                stream: false
-            });
-            
-            const article = response.data.message.content.trim();
-            rewritten.push({
-                original: item.title,
-                article: article,
-                source: item.source,
-                pubDate: item.pubDate
-            });
-        }
-        
-        return rewritten;
-    } catch (error) {
-        console.error('Error rewriting news:', error.message);
-        return newsItems.slice(0, 3).map(item => ({
-            original: item.title,
-            article: item.contentSnippet || item.title,
-            source: item.source,
-            pubDate: item.pubDate
-        }));
-    }
-}
-
-// Fetch live conflict events for #live-updates
-async function sendLiveUpdates() {
-    try {
-        const liveChannel = await client.channels.fetch(CHANNELS.liveUpdates);
-        if (!liveChannel) {
-            console.log('[ERROR] Live channel not found:', CHANNELS.liveUpdates);
-            return;
-        }
-        console.log('[LIVE] Channel found:', liveChannel.name);
-
-        const conflictEvents = await fetchConflictData();
-        if (!conflictEvents || conflictEvents.length === 0) {
-            console.log('[LIVE] No events fetched');
-            return;
-        }
-        console.log('[LIVE] Events:', conflictEvents.length);
-
-        const now = new Date();
-        const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-        const liveEmbed = new EmbedBuilder()
-            .setTitle('> LIVE: Conflict Events Feed')
-            .setDescription(`Real-time events | ${timeStr}`)
-            .setColor(0xFF0000)
-            .setTimestamp();
-
-        conflictEvents.slice(0, 5).forEach((event, index) => {
-            const date = new Date(event.date).toLocaleTimeString();
-            const location = `${event.lat.toFixed(2)}, ${event.lon.toFixed(2)}`;
-            liveEmbed.addFields({
-                name: `> ${index + 1}. ${event.type}`,
-                value: `> ${location} | ${date}\n${event.description?.substring(0, 150) || 'No description'}\nSource: ${event.source}`,
-                inline: false
-            });
-        });
-
-        await liveChannel.send({ embeds: [liveEmbed] });
-        console.log(`Live updates sent at ${timeStr}`);
-    } catch (error) {
-        console.error('Error sending live updates:', error.message);
-    }
-}
-
-async function sendScheduledUpdate() {
-    try {
-        console.log('[SCHEDULED] Starting hourly update...');
-        
-        const devChannel = await client.channels.fetch(CHANNELS.dev);
-        const generalChannel = await client.channels.fetch(CHANNELS.general);
-
-        console.log('[SCHEDULED] Dev channel:', devChannel ? devChannel.name : 'NOT FOUND');
-        console.log('[SCHEDULED] General channel:', generalChannel ? generalChannel.name : 'NOT FOUND');
-
-        const newsItems = await fetchNews();
-        const updateTime = new Date().toLocaleString();
-        const hour = new Date().getHours();
-        const minute = new Date().getMinutes();
-
-        // #general: Top 3 AI-written news articles (full content)
-        if (generalChannel && newsItems && newsItems.length > 0) {
-            const rewrittenNews = await rewriteNewsWithAI(newsItems);
-            
-            const generalEmbed = new EmbedBuilder()
-                .setTitle('> Global News Update')
-                .setDescription('Top stories from around the world')
-                .setColor(0xFFA500)
-                .setTimestamp();
-
-            await generalChannel.send({ embeds: [generalEmbed] });
-
-            // Send each full article as separate message
-            for (const item of rewrittenNews) {
-                const articleEmbed = new EmbedBuilder()
-                    .setTitle(`> ${item.source}: ${item.original.substring(0, 100)}`)
-                    .setDescription(item.article)
-                    .setColor(0xFFA500)
-                    .setFooter({ text: new Date(item.pubDate).toLocaleString() });
-                
-                await generalChannel.send({ embeds: [articleEmbed] });
-            }
-        }
-
-        // #dev: Server stats only
-        if (devChannel) {
-            const devEmbed = new EmbedBuilder()
-                .setTitle('> System Status')
-                .setDescription(`Hourly stats | ${hour}:${minute.toString().padStart(2, '0')}`)
-                .setColor(0x0099FF)
-                .addFields(
-                    { name: 'Status', value: '> Running', inline: true },
-                    { name: 'Uptime', value: `> ${Math.floor(process.uptime() / 60)}min`, inline: true },
-                    { name: 'Memory', value: `> ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1)}MB`, inline: true },
-                    { name: 'API', value: `> Conflict Globe`, inline: true },
-                    { name: 'Sources', value: '> BBC, BleepingComputer', inline: true },
-                    { name: 'Last Update', value: `> ${updateTime}`, inline: true }
-                )
-                .setTimestamp();
-            await devChannel.send({ embeds: [devEmbed] });
-        }
-
-        console.log(`Hourly update sent at ${hour}:${minute}`);
-    } catch (error) {
-        console.error('Error sending scheduled update:', error.message);
-    }
-}
-
-// Handle slash commands
-client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-
-    const { commandName, options } = interaction;
-
-    if (commandName === 'ping') {
-        await interaction.reply('Pong!');
-        return;
-    }
-
-    if (commandName === 'conflict') {
-        const subcommand = options.getSubcommand();
-
-        switch (subcommand) {
-            case 'status':
-                const guildCount = client.guilds.cache.size;
-                if (guildCount === 0) {
-                    await interaction.reply('🌍 Conflict Globe Status: Bot not added to any server.\nAdd the bot using this link:\nhttps://discord.com/oauth2/authorize?client_id=1482276856257314958&permissions=534723950656&scope=bot');
-                } else {
-                    // Check which channels we can access
-                    let channelsList = '';
-                    for (const [name, id] of Object.entries(CHANNELS)) {
-                        try {
-                            const channel = await client.channels.fetch(id);
-                            channelsList += `✅ #${channel.name} (${name})\n`;
-                        } catch (err) {
-                            channelsList += `❌ ${name} (no access)\n`;
-                        }
-                    }
-                    
-                    await interaction.reply(`🌍 Conflict Globe Status: Active\nServer count: ${guildCount}\n\n**Channel Access:**\n${channelsList}\n\n**Schedule:** Hourly updates at minute 0`);
-                }
-                break;
-
-            case 'news':
-                await interaction.deferReply();
-                const newsItems = await fetchNews();
-                if (newsItems && newsItems.length > 0) {
-                    const embed = new EmbedBuilder()
-                        .setTitle('🌍 Conflict Globe: Latest World News')
-                        .setColor(0x0099FF)
-                        .setTimestamp();
-
-                    newsItems.forEach((item, index) => {
-                        const description = item.contentSnippet ? item.contentSnippet.substring(0, 100) + '...' : 'No description';
-                        const source = item.source || 'Unknown';
-                        embed.addFields({
-                            name: `${index + 1}. ${item.title}`,
-                            value: `${description}\n[Source: ${source}] | [Read more](${item.link})`,
-                            inline: false
-                        });
-                    });
-
-                    await interaction.editReply({ embeds: [embed] });
-                } else {
-                    await interaction.editReply('Unable to fetch news at the moment.');
-                }
-                break;
-
-            case 'data':
-                await interaction.deferReply();
-                const conflictEvents = await fetchConflictData();
-                if (conflictEvents && conflictEvents.length > 0) {
-                    const embed = new EmbedBuilder()
-                        .setTitle('🌍 Conflict Globe: Latest Events')
-                        .setColor(0xFF0000)
-                        .setTimestamp();
-
-                    conflictEvents.forEach((event, index) => {
-                        const date = new Date(event.date).toLocaleString();
-                        const location = `${event.lat.toFixed(2)}, ${event.lon.toFixed(2)}`;
-                        embed.addFields({
-                            name: `${index + 1}. ${event.type}`,
-                            value: `📍 ${location} | 📅 ${date}\n${event.description?.substring(0, 150) || 'No description'}\n[Source: ${event.source}]`,
-                            inline: false
-                        });
-                    });
-
-                    await interaction.editReply({ embeds: [embed] });
-                } else {
-                    await interaction.editReply('Unable to fetch conflict data at the moment.');
-                }
-                break;
-
-            case 'testpush':
-                await interaction.reply('Testing scheduled push to channel...');
-                await sendScheduledUpdate();
-                break;
-
-            case 'threats':
-                await interaction.deferReply();
-                const threats = threatAnalyzer.getCriticalThreats(10);
-                if (threats.length > 0) {
-                    const embed = new EmbedBuilder()
-                        .setTitle('🚨 Critical Threats Detected')
-                        .setColor(0xFF0000)
-                        .setTimestamp();
-
-                    threats.forEach((threat, index) => {
-                        const date = new Date(threat.date).toLocaleString();
-                        const location = `${threat.lat.toFixed(2)}, ${threat.lon.toFixed(2)}`;
-                        const level = threat.analysis?.threatLevel || 'Unknown';
-                        const pattern = threat.analysis?.patternType || 'Unknown';
-
-                        embed.addFields({
-                            name: `${index + 1}. ${threat.type}`,
-                            value: `📍 ${location} | 📅 ${date}\n🚨 Level: ${level} | Pattern: ${pattern}`,
-                            inline: false
-                        });
-                    });
-
-                    await interaction.editReply({ embeds: [embed] });
-                } else {
-                    await interaction.editReply('No critical threats detected yet.');
-                }
-                break;
-
-            case 'profiles':
-                await interaction.deferReply();
-                const profiles = threatAnalyzer.getThreatProfiles();
-                if (profiles.length > 0) {
-                    const embed = new EmbedBuilder()
-                        .setTitle('📊 Threat Profiles')
-                        .setColor(0xFFA500)
-                        .setTimestamp();
-
-                    profiles.slice(0, 5).forEach((profile, index) => {
-                        embed.addFields({
-                            name: `${index + 1}. ${profile.patternType} (${profile.source})`,
-                            value: `Events: ${profile.eventCount} | Avg Confidence: ${profile.avgConfidence?.toFixed(1) || 'N/A'}\nFirst: ${new Date(profile.firstSeen).toLocaleDateString()}`,
-                            inline: false
-                        });
-                    });
-
-                    await interaction.editReply({ embeds: [embed] });
-                } else {
-                    await interaction.editReply('No threat profiles available yet.');
-                }
-                break;
-
-            case 'report':
-                await interaction.deferReply();
-                const report = await threatAnalyzer.generateReport();
-                const embed = new EmbedBuilder()
-                    .setTitle('📋 Threat Analysis Report')
-                    .setColor(0x00FF00)
-                    .setTimestamp()
-                    .addFields(
-                        { name: 'Summary', value: `Total Events: ${report.summary.totalEvents}\nCritical: ${report.summary.criticalCount}\nHigh: ${report.summary.highCount}`, inline: false },
-                        { name: 'Pattern Analysis', value: Object.entries(report.patternAnalysis).map(([k, v]) => `${k}: ${v}`).join('\n') || 'No patterns detected', inline: false }
-                    );
-
-                if (report.recommendations.length > 0) {
-                    embed.addFields({
-                        name: 'Recommendations',
-                        value: report.recommendations.map(r => `• ${r}`).join('\n'),
-                        inline: false
-                    });
-                }
-
-                await interaction.editReply({ embeds: [embed] });
-                break;
-
-            case 'analyze':
-                await interaction.deferReply();
-                const count = await threatAnalyzer.fetchAndAnalyze();
-                await interaction.editReply(`Analyzed ${count} new events and updated threat profiles.`);
-                break;
-
-            default:
-                await interaction.reply('Unknown subcommand.');
-        }
-    }
+    default:
+      msg.reply(`Unknown command: ${cmd}. Try \`!help\``);
+  }
 });
 
 client.login(TOKEN);
+
+console.log('🤖 ProxHunt Discord Bot starting...');
